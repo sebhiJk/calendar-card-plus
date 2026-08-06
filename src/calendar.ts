@@ -12,7 +12,7 @@ export interface EventGroup {
 }
 
 // -------------------------------------------------------------------
-// EXPORTIERTE HILFSFUNKTIONEN FÜR DAS DETAIL-POPUP (popup-dialog.ts)
+// HILFSFUNKTIONEN FÜR POPUP & DARSTELLUNG
 // -------------------------------------------------------------------
 export function _resolveColor(item: any, _config?: any, ..._rest: any[]): string {
     if (item && item.color) return item.color;
@@ -74,9 +74,8 @@ export function _groupEventsByDateAndCalendar(events: CalendarEvent[]): EventGro
     return _groupEventsByDate(events);
 }
 
-
 // -------------------------------------------------------------------
-// HAUPT RENDER FUNKTIONEN FÜR DIE KARTE
+// HAUPT RENDER FUNKTIONEN
 // -------------------------------------------------------------------
 export function renderCalendar(
     hass: HomeAssistant,
@@ -162,7 +161,7 @@ function _renderDayRow(
     config: CalendarCardPlusConfig
 ): TemplateResult {
     const dayColor = getDayColor(dayDate);
-    const weekdayFull = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'long' }); // z.B. "Donnerstag"
+    const weekdayFull = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'long' });
 
     const monthStr = dayDate.toLocaleDateString(hass.language || 'de', { month: 'short' }).toUpperCase().replace('.', '');
     const dayNum = dayDate.getDate();
@@ -172,7 +171,6 @@ function _renderDayRow(
 
     return html`
         <div class="day-bubble ${isToday ? 'today' : ''}" style="border-left: 4px solid ${dayColor};">
-            <!-- Spalte 1: Kalenderblatt & ausgeschriebener Wochentag darunter -->
             <div class="day-column-left">
                 <div class="calendar-date-icon">
                     <div class="month" style="background-color: ${dayColor};">${monthStr}</div>
@@ -181,7 +179,6 @@ function _renderDayRow(
                 <div class="weekday-name">${weekdayFull}</div>
             </div>
 
-            <!-- Spalte 2: Termine (rechts neben dem Datum) -->
             <div class="day-column-middle">
                 ${realEvents.length === 0 
                     ? html`<div class="no-events">Keine Termine</div>`
@@ -194,7 +191,6 @@ function _renderDayRow(
                 }
             </div>
 
-            <!-- Spalte 3: Plus-Button ganz rechts -->
             <div class="day-column-right">
                 <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, hass, config)}>
                     <ha-icon icon="mdi:plus-circle-outline"></ha-icon>

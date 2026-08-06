@@ -183,20 +183,18 @@ export class CalendarCardPlus extends LitElement {
     }
 
     private _handleAddEvent = (e: CustomEvent) => {
-        let targetCalendar = e.detail.calendarId;
-        if (!targetCalendar) {
-            const calendars = Object.keys(this.hass.states).filter(eid => eid.startsWith('calendar.'));
-            targetCalendar = calendars.length > 0 ? calendars[0] : '';
-        }
+        e.stopPropagation();
+        const targetCalendar = e.detail.calendarId;
+        const selectedDate = e.detail.selectedDate;
 
-        // Öffnet zuverlässig den HA-Dialog / More-Info für das entsprechende Kalender-Entity
-        this.dispatchEvent(
-            new CustomEvent('hass-more-info', {
-                bubbles: true,
-                composed: true,
-                detail: { entityId: targetCalendar }
-            })
-        );
+        // Ruft das karten-interne Popup auf, um Termine hinzuzufügen
+        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
+        if (popup && typeof popup.showAddDialog === 'function') {
+            popup.showAddDialog({
+                calendarId: targetCalendar,
+                selectedDate: selectedDate
+            });
+        }
     };
 
     private _showPopup(dialogTag: string, dialogParams: any): void {
@@ -297,14 +295,22 @@ export class CalendarCardPlus extends LitElement {
                 gap: 12px;
                 border: none;
                 border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.08));
-                background-color: transparent;
                 padding: 12px 16px;
+                background-color: transparent;
+            }
+            /* Zebra-Look: Ungerade Zeilen (1, 3, 5, 7) erhalten eine alternative Farbe */
+            .day-bubble:nth-child(odd) {
+                background-color: rgba(255, 255, 255, 0.03);
+            }
+            /* Gerade Zeilen (2, 4, 6) bleiben im Standard-Dunkel */
+            .day-bubble:nth-child(even) {
+                background-color: transparent;
+            }
+            .day-bubble.today {
+                background-color: rgba(3, 169, 244, 0.08) !important;
             }
             .day-bubble:last-child {
                 border-bottom: none;
-            }
-            .day-bubble.today {
-                background-color: rgba(3, 169, 244, 0.06);
             }
             .day-column-left {
                 display: flex;
