@@ -35,6 +35,11 @@ export class CalendarCardPlus extends LitElement {
     @state() private _detailPopupTitle = '';
     @state() private _detailPopupEvents: CalendarEvent[] = [];
 
+    // --- State für das Add-Popup ---
+    @state() private _showAddPopup = false;
+    @state() private _addCalendarId = '';
+    @state() private _addSelectedDate = '';
+
     private _handleRangeChanged = (e: CustomEvent) => {
         this._customStart = e.detail.start;
         this._customEnd = e.detail.end;
@@ -50,16 +55,9 @@ export class CalendarCardPlus extends LitElement {
 
     private _handleAddEvent = (e: CustomEvent) => {
         e.stopPropagation();
-        const targetCalendar = e.detail.calendarId;
-        const selectedDate = e.detail.selectedDate;
-
-        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
-        if (popup && typeof popup.showAddDialog === 'function') {
-            popup.showAddDialog({
-                calendarId: targetCalendar,
-                selectedDate: selectedDate
-            });
-        }
+        this._addCalendarId = e.detail.calendarId || Object.keys(this.hass.states).find(eid => eid.startsWith('calendar.')) || '';
+        this._addSelectedDate = e.detail.selectedDate;
+        this._showAddPopup = true;
     };
 
     private _onEventSaved = () => {
@@ -206,9 +204,9 @@ export class CalendarCardPlus extends LitElement {
             >
                 ${content}
 
-                <!-- Direktes Rendern des Popups innerhalb der Karte, wenn ausgelöst -->
+                <!-- Detail-Popup -->
                 ${this._showDetailPopup ? html`
-                    <calendar-card-plus-popup
+                    <calendar-card-popup-dialog
                         .hass=${this.hass}
                         .config=${this.config}
                         .opener=${this}
@@ -217,7 +215,21 @@ export class CalendarCardPlus extends LitElement {
                         .events=${this._detailPopupEvents}
                         .onEventSaved=${this._onEventSaved}
                         @closed=${() => { this._showDetailPopup = false; }}
-                    ></calendar-card-plus-popup>
+                    ></calendar-card-popup-dialog>
+                ` : ''}
+
+                <!-- Add-Popup -->
+                ${this._showAddPopup ? html`
+                    <calendar-card-popup-dialog
+                        .hass=${this.hass}
+                        .config=${this.config}
+                        .opener=${this}
+                        .mode=${'add'}
+                        .calendarId=${this._addCalendarId}
+                        .selectedDate=${this._addSelectedDate}
+                        .onEventSaved=${this._onEventSaved}
+                        @closed=${() => { this._showAddPopup = false; }}
+                    ></calendar-card-popup-dialog>
                 ` : ''}
             </ha-card>
         `;
@@ -378,7 +390,6 @@ export class CalendarCardPlus extends LitElement {
                 cursor: pointer;
             }
             .event-time {
-                shadow: none;
                 font-size: 0.85em;
                 color: var(--secondary-text-color);
                 min-width: 60px;
