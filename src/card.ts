@@ -30,16 +30,6 @@ export class CalendarCardPlus extends LitElement {
     @state() private _customStart?: Date;
     @state() private _customEnd?: Date;
 
-    // --- State für das Detail-Popup ---
-    @state() private _showDetailPopup = false;
-    @state() private _detailPopupTitle = '';
-    @state() private _detailPopupEvents: CalendarEvent[] = [];
-
-    // --- State für das Add-Popup ---
-    @state() private _showAddPopup = false;
-    @state() private _addCalendarId = '';
-    @state() private _addSelectedDate = '';
-
     private _handleRangeChanged = (e: CustomEvent) => {
         this._customStart = e.detail.start;
         this._customEnd = e.detail.end;
@@ -48,16 +38,43 @@ export class CalendarCardPlus extends LitElement {
 
     private _handleShowDetail = (e: CustomEvent) => {
         e.stopPropagation();
-        this._detailPopupTitle = e.detail.title || 'Termine';
-        this._detailPopupEvents = e.detail.entities || [];
-        this._showDetailPopup = true;
+        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
+        if (popup) {
+            if (typeof popup.showDetailDialog === 'function') {
+                popup.showDetailDialog({
+                    title: e.detail.title || 'Termine',
+                    events: e.detail.entities || []
+                });
+            } else if (typeof popup.show === 'function') {
+                popup.show({
+                    mode: 'detail',
+                    title: e.detail.title || 'Termine',
+                    events: e.detail.entities || []
+                });
+            }
+        }
     };
 
     private _handleAddEvent = (e: CustomEvent) => {
         e.stopPropagation();
-        this._addCalendarId = e.detail.calendarId || Object.keys(this.hass.states).find(eid => eid.startsWith('calendar.')) || '';
-        this._addSelectedDate = e.detail.selectedDate;
-        this._showAddPopup = true;
+        const targetCalendar = e.detail.calendarId || Object.keys(this.hass.states).find(eid => eid.startsWith('calendar.')) || '';
+        const selectedDate = e.detail.selectedDate;
+
+        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
+        if (popup) {
+            if (typeof popup.showAddDialog === 'function') {
+                popup.showAddDialog({
+                    calendarId: targetCalendar,
+                    selectedDate: selectedDate
+                });
+            } else if (typeof popup.show === 'function') {
+                popup.show({
+                    mode: 'add',
+                    calendarId: targetCalendar,
+                    selectedDate: selectedDate
+                });
+            }
+        }
     };
 
     private _onEventSaved = () => {
@@ -204,33 +221,13 @@ export class CalendarCardPlus extends LitElement {
             >
                 ${content}
 
-                <!-- Detail-Popup -->
-                ${this._showDetailPopup ? html`
-                    <calendar-card-popup-dialog
-                        .hass=${this.hass}
-                        .config=${this.config}
-                        .opener=${this}
-                        .mode=${'detail'}
-                        .title=${this._detailPopupTitle}
-                        .events=${this._detailPopupEvents}
-                        .onEventSaved=${this._onEventSaved}
-                        @closed=${() => { this._showDetailPopup = false; }}
-                    ></calendar-card-popup-dialog>
-                ` : ''}
-
-                <!-- Add-Popup -->
-                ${this._showAddPopup ? html`
-                    <calendar-card-popup-dialog
-                        .hass=${this.hass}
-                        .config=${this.config}
-                        .opener=${this}
-                        .mode=${'add'}
-                        .calendarId=${this._addCalendarId}
-                        .selectedDate=${this._addSelectedDate}
-                        .onEventSaved=${this._onEventSaved}
-                        @closed=${() => { this._showAddPopup = false; }}
-                    ></calendar-card-popup-dialog>
-                ` : ''}
+                <!-- Permanenter Popup-Container, damit querySelector ihn immer direkt ansprechen kann -->
+                <calendar-card-popup-dialog
+                    .hass=${this.hass}
+                    .config=${this.config}
+                    .opener=${this}
+                    .onEventSaved=${this._onEventSaved}
+                ></calendar-card-popup-dialog>
             </ha-card>
         `;
     }
