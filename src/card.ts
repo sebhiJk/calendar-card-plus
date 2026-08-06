@@ -7,19 +7,19 @@ import { renderCalendar } from './calendar';
 import './popup-dialog';
 
 export const DEFAULT_DAY_COLORS = [
-  "#2196F3", // Montag (Blau)
-  "#8BC34A", // Dienstag (Grün)
-  "#E91E63", // Mittwoch (Pink)
-  "#FF9800", // Donnerstag (Orange)
-  "#00BCD4", // Freitag (Türkis)
-  "#9C27B0", // Samstag (Violett)
-  "#F44336"  // Sonntag (Rot)
+    "#2196F3", // Montag (Blau)
+    "#8BC34A", // Dienstag (Grün)
+    "#E91E63", // Mittwoch (Pink)
+    "#FF9800", // Donnerstag (Orange)
+    "#00BCD4", // Freitag (Türkis)
+    "#9C27B0", // Samstag (Violett)
+    "#F44336"  // Sonntag (Rot)
 ];
 
 export function getDayColor(date: Date): string {
-  const day = date.getDay(); // 0 = Sonntag, 1 = Montag, etc.
-  const index = day === 0 ? 6 : day - 1;
-  return DEFAULT_DAY_COLORS[index];
+    const day = date.getDay(); // 0 = Sonntag, 1 = Montag, etc.
+    const index = day === 0 ? 6 : day - 1;
+    return DEFAULT_DAY_COLORS[index];
 }
 
 @customElement('calendar-card-plus')
@@ -30,6 +30,11 @@ export class CalendarCardPlus extends LitElement {
     @state() private _customStart?: Date;
     @state() private _customEnd?: Date;
 
+    // --- State für das Detail-Popup ---
+    @state() private _showDetailPopup = false;
+    @state() private _detailPopupTitle = '';
+    @state() private _detailPopupEvents: CalendarEvent[] = [];
+
     public connectedCallback() {
         super.connectedCallback();
         this.addEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
@@ -38,10 +43,10 @@ export class CalendarCardPlus extends LitElement {
     }
 
     public disconnectedCallback() {
-        super.disconnectedCallback();
         this.removeEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
         this.removeEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
         this.removeEventListener('calendar-card-add-event', this._handleAddEvent as unknown as EventListener);
+        super.disconnectedCallback();
     }
 
     private _handleRangeChanged = (e: CustomEvent) => {
@@ -94,7 +99,6 @@ export class CalendarCardPlus extends LitElement {
 
         const allEvents = await fetchCalendarEvents(this.hass, start, end, calendars);
 
-        // Filter: UTC Zeitverschiebungs-Bug beheben (schneidet den "einen Tag zu viel" ab)
         const toLocalKey = (d: Date) => {
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -171,23 +175,19 @@ export class CalendarCardPlus extends LitElement {
         });
     }
 
-    private _handleShowDetail = async (e: CustomEvent) => {
-        this._showPopup('calendar-card-plus-popup', {
-            hass: this.hass,
-            config: this.config,
-            opener: this,
-            mode: 'detail',
-            title: e.detail.title,
-            events: e.detail.entities
-        });
-    }
+    // --- Korrigierter Event Handler für das Detail-Popup ---
+    private _handleShowDetail = (e: CustomEvent) => {
+        e.stopPropagation();
+        this._detailPopupTitle = e.detail.title || 'Termine';
+        this._detailPopupEvents = e.detail.entities || [];
+        this._showDetailPopup = true;
+    };
 
     private _handleAddEvent = (e: CustomEvent) => {
         e.stopPropagation();
         const targetCalendar = e.detail.calendarId;
         const selectedDate = e.detail.selectedDate;
 
-        // Ruft das karten-interne Popup auf, um Termine hinzuzufügen
         const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
         if (popup && typeof popup.showAddDialog === 'function') {
             popup.showAddDialog({
@@ -196,23 +196,6 @@ export class CalendarCardPlus extends LitElement {
             });
         }
     };
-
-    private _showPopup(dialogTag: string, dialogParams: any): void {
-        this.dispatchEvent(
-            new CustomEvent('show-dialog', {
-                detail: {
-                    dialogTag,
-                    dialogImport: () => import('./popup-dialog'),
-                    dialogParams: {
-                        ...dialogParams,
-                        onEventSaved: this._onEventSaved
-                    },
-                },
-                bubbles: true,
-                composed: true,
-            })
-        );
-    }
 
     private _onEventSaved = () => {
         this._events = undefined;
@@ -233,6 +216,20 @@ export class CalendarCardPlus extends LitElement {
         return html`
             <ha-card>
                 ${content}
+
+                <!-- Direktes Rendern des Popups innerhalb der Karte, wenn ausgelöst -->
+                ${this._showDetailPopup ? html`
+                    <calendar-card-plus-popup
+                        .hass=${this.hass}
+                        .config=${this.config}
+                        .opener=${this}
+                        .mode=${'detail'}
+                        .title=${this._detailPopupTitle}
+                        .events=${this._detailPopupEvents}
+                        .onEventSaved=${this._onEventSaved}
+                        @closed=${() => { this._showDetailPopup = false; }}
+                    ></calendar-card-plus-popup>
+                ` : ''}
             </ha-card>
         `;
     }
@@ -248,6 +245,7 @@ export class CalendarCardPlus extends LitElement {
                 display: flex;
                 flex-direction: column;
                 padding: 16px;
+                position: relative; /* Wichtig falls absolute Elemente im Popup greifen */
             }
             
             /* --- Header --- */
@@ -298,11 +296,9 @@ export class CalendarCardPlus extends LitElement {
                 padding: 12px 16px;
                 background-color: transparent;
             }
-            /* Zebra-Look: Ungerade Zeilen (1, 3, 5, 7) erhalten eine alternative Farbe */
             .day-bubble:nth-child(odd) {
                 background-color: rgba(255, 255, 255, 0.03);
             }
-            /* Gerade Zeilen (2, 4, 6) bleiben im Standard-Dunkel */
             .day-bubble:nth-child(even) {
                 background-color: transparent;
             }
@@ -393,6 +389,7 @@ export class CalendarCardPlus extends LitElement {
                 cursor: pointer;
             }
             .event-time {
+                shadow: none;
                 font-size: 0.85em;
                 color: var(--secondary-text-color);
                 min-width: 60px;
