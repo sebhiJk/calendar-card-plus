@@ -78,10 +78,30 @@ export class CalendarCardPlus extends LitElement {
 
         const allEvents = await fetchCalendarEvents(this.hass, start, end, calendars);
 
+        // Filter: UTC Zeitverschiebungs-Bug beheben (schneidet den "einen Tag zu viel" ab)
+        const toLocalKey = (d: Date) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+        const localStartStr = toLocalKey(start);
+        const localEndStr = toLocalKey(end);
+
+        const validEvents = allEvents.filter(ev => {
+            let evDateStr = "";
+            if (ev.start.date) {
+                evDateStr = ev.start.date;
+            } else if (ev.start.dateTime) {
+                evDateStr = toLocalKey(new Date(ev.start.dateTime));
+            }
+            return evDateStr >= localStartStr && evDateStr <= localEndStr;
+        });
+
         if (this.config.show_empty_days) {
-            this._events = this._injectEmptyDays(allEvents, start, end);
+            this._events = this._injectEmptyDays(validEvents, start, end);
         } else {
-            this._events = allEvents;
+            this._events = validEvents;
         }
         this.requestUpdate();
     }
@@ -90,7 +110,6 @@ export class CalendarCardPlus extends LitElement {
         const result: CalendarEvent[] = [...events];
         const dayMap = new Set<string>();
         
-        // Lokale Umwandlung ohne UTC-Zeitverschiebung (verhindert falschen Tag)
         const toLocalKey = (d: Date) => {
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -148,14 +167,23 @@ export class CalendarCardPlus extends LitElement {
     }
 
     private _handleAddEvent = (e: CustomEvent) => {
-        // Öffnet das standard Home Assistant Pop-up ohne Import-Blocker
+        // Fallback für fehlende Calendar ID eingebaut, damit das HA Dialog-Fenster nicht crasht
+        let targetCalendar = e.detail.calendarId;
+        if (!targetCalendar) {
+            const calendars = Object.keys(this.hass.states).filter(eid => eid.startsWith('calendar.'));
+            targetCalendar = calendars.length > 0 ? calendars[0] : '';
+        }
+
         this.dispatchEvent(
             new CustomEvent('show-dialog', {
                 bubbles: true,
                 composed: true,
                 detail: {
                     dialogTag: 'ha-dialog-calendar-event-editor',
-                    dialogParams: e.detail
+                    dialogParams: {
+                        calendarId: targetCalendar,
+                        selectedDate: e.detail.selectedDate
+                    }
                 }
             })
         );
@@ -248,24 +276,66 @@ export class CalendarCardPlus extends LitElement {
             .calendar-days-list {
                 display: flex;
                 flex-direction: column;
-                gap: 12px;
+                gap: 16px;
             }
             .day-bubble {
-                border: 1px solid;
+                border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
                 border-radius: var(--ha-card-border-radius, 12px);
-                padding: 12px 16px;
                 background-color: var(--card-background-color, #1c1c1e);
                 display: flex;
                 flex-direction: column;
+                overflow: hidden;
+            }
+            .day-bubble.today {
+                border-color: var(--primary-color, #03a9f4);
             }
             .day-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 8px;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.05));
+                background: rgba(0,0,0,0.05);
             }
-            .day-title {
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            
+            /* --- Rotes Kalender Icon --- */
+            .calendar-date-icon {
+                display: flex;
+                flex-direction: column;
+                width: 38px;
+                height: 40px;
+                border-radius: 6px;
+                background-color: #fff;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+                text-align: center;
+                border: 1px solid rgba(0,0,0,0.1);
+                flex-shrink: 0;
+            }
+            .calendar-date-icon .month {
+                background-color: #f44336;
+                color: white;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                padding: 2px 0;
+                line-height: 1.1;
+            }
+            .calendar-date-icon .day {
+                font-size: 18px;
                 font-weight: bold;
+                color: #333;
+                background-color: #fff;
+                line-height: 24px;
+            }
+
+            .day-title {
+                font-weight: 600;
                 font-size: 1.05em;
                 color: var(--primary-text-color);
             }
@@ -274,62 +344,56 @@ export class CalendarCardPlus extends LitElement {
                 border: none;
                 color: var(--secondary-text-color);
                 cursor: pointer;
-                padding: 0;
+                padding: 4px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                border-radius: 50%;
+                transition: background-color 0.2s, color 0.2s;
             }
             .add-event-btn:hover {
                 color: var(--primary-color);
+                background-color: rgba(120, 120, 120, 0.1);
             }
             .add-event-btn ha-icon {
                 --mdc-icon-size: 24px;
             }
 
             /* --- Events (Textliste) --- */
+            .event-list {
+                padding: 12px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
             .event-item {
                 display: flex;
                 align-items: flex-start;
-                gap: 10px;
-                margin-bottom: 6px;
+                gap: 16px;
                 cursor: pointer;
-            }
-            .event-item:last-child {
-                margin-bottom: 0;
             }
             .event-time {
                 font-size: 0.9em;
                 color: var(--secondary-text-color);
                 min-width: 65px;
                 white-space: nowrap;
+                padding-top: 1px;
             }
             .event-title {
-                font-size: 0.9em;
+                font-size: 0.95em;
                 color: var(--primary-text-color);
                 word-break: break-word;
             }
             .no-events {
                 font-size: 0.9em;
                 color: var(--secondary-text-color);
+                font-style: italic;
             }
         `;
     }
 
     public getCardSize(): number {
         return 4;
-    }
-
-    public static async getConfigElement() {
-        await import('./editor');
-        return document.createElement('calendar-card-plus-editor');
-    }
-
-    public static getStubConfig(_hass: HomeAssistant): CalendarCardPlusConfig {
-         return {
-            type: 'custom:calendar-card-plus',
-            exclude_entities: [],
-            show_empty_days: true
-         };
     }
 }
 

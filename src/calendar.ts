@@ -18,7 +18,6 @@ export function _resolveColor(item: any, _config?: any, ..._rest: any[]): string
     return 'var(--primary-color, #03a9f4)';
 }
 
-// Baut das kleine rot/weiße Kalender-Icon exakt wie auf deinem Screenshot
 export function _renderDynamicIcon(item: any, _config?: any, ..._rest: any[]): TemplateResult {
     let d = new Date();
     if (item && (item.start?.date || item.start?.dateTime)) {
@@ -30,7 +29,7 @@ export function _renderDynamicIcon(item: any, _config?: any, ..._rest: any[]): T
     return html`
         <div style="display: inline-flex; flex-direction: column; width: 36px; height: 38px; border-radius: 6px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-align: center; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; line-height: 1;">
             <div style="background-color: #f44336; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 0;">${monthStr}</div>
-            <div style="font-size: 16px; font-weight: bold; color: #333; padding-top: 2px;">${dayNum}</div>
+            <div style="font-size: 16px; font-weight: bold; color: #333; padding-top: 2px; background-color: #fff;">${dayNum}</div>
         </div>
     `;
 }
@@ -39,14 +38,14 @@ export function _resolveBackgroundColor(_item?: any, _config?: any, ..._rest: an
     return 'var(--card-background-color, #1c1c1e)';
 }
 
-export function _formatDuration(_hass: any, start: any, end: any, isAllDay: boolean): string {
+export function _formatDuration(_hass: HomeAssistant, start: any, end: any, isAllDay: boolean): string {
     if (isAllDay) return 'Ganztägig';
     const s = new Date(start);
     const e = new Date(end);
     return `${s.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${e.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 }
 
-export function _formatLocalizedDuration(_hass: any, diffMins: number): string {
+export function _formatLocalizedDuration(_hass: HomeAssistant, diffMins: number): string {
     const h = Math.floor(diffMins / 60);
     const m = Math.floor(diffMins % 60);
     if (h > 0 && m > 0) return `${h}h ${m}m`;
@@ -162,31 +161,40 @@ function _renderDayRow(
 ): TemplateResult {
     const weekday = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'short' });
     const dayMonth = dayDate.toLocaleDateString(hass.language || 'de', { day: '2-digit', month: '2-digit' });
-    const dayTitle = `${weekday}., ${dayMonth}`;
+    const dayTitle = `${weekday}., ${dayMonth}.`;
+
+    const monthStr = dayDate.toLocaleDateString(hass.language || 'de', { month: 'short' }).toUpperCase().replace('.', '');
+    const dayNum = dayDate.getDate();
 
     const isToday = new Date().toDateString() === dayDate.toDateString();
-    const borderColor = isToday ? 'var(--primary-color, #03a9f4)' : 'var(--divider-color, rgba(255,255,255,0.12))';
-
-    const realEvents = events.filter(ev => !ev.is_empty);
+    const realEvents = events.filter((ev: CalendarEvent) => !ev.is_empty);
 
     return html`
-        <div class="day-bubble" style="border-color: ${borderColor};">
+        <div class="day-bubble ${isToday ? 'today' : ''}">
             <div class="day-header">
-                <span class="day-title">${dayTitle}</span>
+                <div class="header-left">
+                    <div class="calendar-date-icon">
+                        <div class="month">${monthStr}</div>
+                        <div class="day">${dayNum}</div>
+                    </div>
+                    <span class="day-title">${dayTitle}</span>
+                </div>
                 <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, config)}>
                     <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
                 </button>
             </div>
             
-            ${realEvents.length === 0 
-                ? html`<div class="no-events">Keine Termine</div>`
-                : realEvents.map(ev => html`
-                    <div class="event-item" @click=${(e: Event) => _handleEventClick(e, ev)}>
-                        <span class="event-time">${_formatEventTime(ev)}</span>
-                        <span class="event-title">${ev.summary}</span>
-                    </div>
-                `)
-            }
+            <div class="event-list">
+                ${realEvents.length === 0 
+                    ? html`<div class="no-events">Keine Termine</div>`
+                    : realEvents.map((ev: CalendarEvent) => html`
+                        <div class="event-item" @click=${(e: Event) => _handleEventClick(e, ev)}>
+                            <span class="event-time">${_formatEventTime(ev)}</span>
+                            <span class="event-title">${ev.summary}</span>
+                        </div>
+                    `)
+                }
+            </div>
         </div>
     `;
 }
@@ -239,7 +247,7 @@ function _groupEventsByDay(events: CalendarEvent[]): Record<string, CalendarEven
         return `${y}-${m}-${day}`;
     };
 
-    events.forEach(ev => {
+    events.forEach((ev: CalendarEvent) => {
         let key = "";
         if (ev.start.date) {
             key = ev.start.date;
@@ -260,10 +268,7 @@ function _formatEventTime(ev: CalendarEvent): string {
     if (ev.start.date) return 'Ganztägig';
     if (ev.start.dateTime) {
         const start = new Date(ev.start.dateTime);
-        const startStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        // Kein End-Zeitraum anzeigen um wie auf den Bildern nur z.B. "23:30" oder "17:00" auszugeben.
-        return startStr;
+        return start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     return '';
 }
