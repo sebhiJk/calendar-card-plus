@@ -189,15 +189,20 @@ export class CalendarCardPlus extends LitElement {
             targetCalendar = calendars.length > 0 ? calendars[0] : '';
         }
 
-        // Öffnet zuverlässig den HA-Dialog / More-Info für das entsprechende Kalender-Entity
         this.dispatchEvent(
-            new CustomEvent('hass-more-info', {
+            new CustomEvent('show-dialog', {
                 bubbles: true,
                 composed: true,
-                detail: { entityId: targetCalendar }
+                detail: {
+                    dialogTag: 'ha-dialog-calendar-event-editor',
+                    dialogParams: {
+                        calendarId: targetCalendar,
+                        selectedDate: e.detail.selectedDate
+                    }
+                }
             })
         );
-    };
+    }
 
     private _showPopup(dialogTag: string, dialogParams: any): void {
         this.dispatchEvent(
@@ -282,126 +287,122 @@ export class CalendarCardPlus extends LitElement {
                 --mdc-icon-size: 24px;
             }
 
+            /* --- Tage (Bubbles) --- */
             .calendar-days-list {
                 display: flex;
                 flex-direction: column;
-                background-color: var(--card-background-color, #1c1c1e);
-                border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
-                border-radius: var(--ha-card-border-radius, 12px);
-                overflow: hidden;
+                gap: 16px;
             }
             .day-bubble {
-                display: grid;
-                grid-template-columns: 100px 1fr 40px;
-                align-items: center;
-                gap: 12px;
-                border: none;
-                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.08));
-                background-color: transparent;
-                padding: 12px 16px;
-            }
-            .day-bubble:last-child {
-                border-bottom: none;
-            }
-            .day-bubble.today {
-                background-color: rgba(3, 169, 244, 0.06);
-            }
-            .day-column-left {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                border-right: 1px solid var(--divider-color, rgba(255,255,255,0.08));
-                padding-right: 12px;
-            }
-            .calendar-date-icon {
-                display: flex;
-                flex-direction: column;
-                width: 38px;
-                height: 40px;
-                border-radius: 6px;
-                background-color: #fff;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                overflow: hidden;
-                text-align: center;
-                border: 1px solid rgba(0,0,0,0.1);
-                flex-shrink: 0;
-            }
-            .calendar-date-icon .month {
-                color: white;
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                padding: 2px 0;
-                line-height: 1.1;
-            }
-            .calendar-date-icon .day {
-                font-size: 18px;
-                font-weight: bold;
-                color: #333;
-                background-color: #fff;
-                line-height: 24px;
-            }
-            .weekday-name {
-                font-size: 0.75em;
-                color: var(--secondary-text-color);
-                font-weight: 500;
-                text-align: center;
-                white-space: nowrap;
-            }
-            .day-column-middle {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                min-width: 0;
-            }
-            .day-column-right {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            .add-event-btn {
-                background: none;
-                border: none;
-                color: var(--secondary-text-color);
-                cursor: pointer;
-                padding: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: background-color 0.2s, color 0.2s;
-            }
-            .add-event-btn:hover {
-                color: var(--primary-color);
-                background-color: rgba(120, 120, 120, 0.1);
-            }
-            .add-event-btn ha-icon {
-                --mdc-icon-size: 24px;
-            }
-            .event-item {
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-                cursor: pointer;
-            }
-            .event-time {
-                font-size: 0.85em;
-                color: var(--secondary-text-color);
-                min-width: 60px;
-                white-space: nowrap;
-            }
-            .event-title {
-                font-size: 0.9em;
-                color: var(--primary-text-color);
-                word-break: break-word;
-            }
-            .no-events {
-                font-size: 0.85em;
-                color: var(--secondary-text-color);
-                font-style: italic;
-            }
+			display: grid;
+			grid-template-columns: 100px 1fr 40px;
+			align-items: center;
+			gap: 12px;
+			border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
+			border-radius: var(--ha-card-border-radius, 12px);
+			background-color: var(--card-background-color, #1c1c1e);
+			padding: 12px 16px;
+			margin-bottom: 8px;
+			}
+			.day-bubble.today {
+				border-color: var(--primary-color, #03a9f4);
+			}
+			.day-column-left {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 6px;
+				border-right: 1px solid var(--divider-color, rgba(255,255,255,0.1));
+				padding-right: 12px;
+			}
+			.calendar-date-icon {
+				display: flex;
+				flex-direction: column;
+				width: 38px;
+				height: 40px;
+				border-radius: 6px;
+				background-color: #fff;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+				overflow: hidden;
+				text-align: center;
+				border: 1px solid rgba(0,0,0,0.1);
+				flex-shrink: 0;
+			}
+			.calendar-date-icon .month {
+				color: white;
+				font-size: 10px;
+				font-weight: 700;
+				text-transform: uppercase;
+				padding: 2px 0;
+				line-height: 1.1;
+			}
+			.calendar-date-icon .day {
+				font-size: 18px;
+				font-weight: bold;
+				color: #333;
+				background-color: #fff;
+				line-height: 24px;
+			}
+			.weekday-name {
+				font-size: 0.75em;
+				color: var(--secondary-text-color);
+				font-weight: 500;
+				text-align: center;
+				white-space: nowrap;
+			}
+			.day-column-middle {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				min-width: 0;
+			}
+			.day-column-right {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			.add-event-btn {
+				background: none;
+				border: none;
+				color: var(--secondary-text-color);
+				cursor: pointer;
+				padding: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 50%;
+				transition: background-color 0.2s, color 0.2s;
+			}
+			.add-event-btn:hover {
+				color: var(--primary-color);
+				background-color: rgba(120, 120, 120, 0.1);
+			}
+			.add-event-btn ha-icon {
+				--mdc-icon-size: 24px;
+			}
+			.event-item {
+				display: flex;
+				align-items: flex-start;
+				gap: 12px;
+				cursor: pointer;
+			}
+			.event-time {
+				font-size: 0.85em;
+				color: var(--secondary-text-color);
+				min-width: 60px;
+				white-space: nowrap;
+			}
+			.event-title {
+				font-size: 0.9em;
+				color: var(--primary-text-color);
+				word-break: break-word;
+			}
+			.no-events {
+				font-size: 0.85em;
+				color: var(--secondary-text-color);
+				font-style: italic;
+			}
         `;
     }
 
