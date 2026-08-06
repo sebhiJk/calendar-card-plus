@@ -8,12 +8,12 @@ async function Ve(n, e, t, i) {
       if (!Array.isArray(s))
         throw new Error("Response is not an array");
       return s.map((_) => {
-        var m, g, w, D, b, x;
-        const c = ((m = _.start) == null ? void 0 : m.dateTime) || ((g = _.start) == null ? void 0 : g.date) || _.start, h = ((w = _.end) == null ? void 0 : w.dateTime) || ((D = _.end) == null ? void 0 : D.date) || _.end;
+        var m, g, w, C, b, x;
+        const c = ((m = _.start) == null ? void 0 : m.dateTime) || ((g = _.start) == null ? void 0 : g.date) || _.start, u = ((w = _.end) == null ? void 0 : w.dateTime) || ((C = _.end) == null ? void 0 : C.date) || _.end;
         return {
           ..._,
           start: { dateTime: c.includes("T") ? c : void 0, date: c.includes("T") ? void 0 : c },
-          end: { dateTime: h.includes("T") ? h : void 0, date: h.includes("T") ? void 0 : h },
+          end: { dateTime: u.includes("T") ? u : void 0, date: u.includes("T") ? void 0 : u },
           summary: _.summary || _.title || "Unknown Event",
           entity_id: d,
           calendar_name: ((x = (b = n.states[d]) == null ? void 0 : b.attributes) == null ? void 0 : x.friendly_name) || d
@@ -40,7 +40,7 @@ async function Ve(n, e, t, i) {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const J = globalThis, _e = J.ShadowRoot && (J.ShadyCSS === void 0 || J.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, ce = Symbol(), pe = /* @__PURE__ */ new WeakMap();
-let Ce = class {
+let De = class {
   constructor(e, t, i) {
     if (this._$cssResult$ = !0, i !== ce) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
     this.cssText = e, this.t = t;
@@ -58,13 +58,13 @@ let Ce = class {
     return this.cssText;
   }
 };
-const Ke = (n) => new Ce(typeof n == "string" ? n : n + "", void 0, ce), De = (n, ...e) => {
+const Ke = (n) => new De(typeof n == "string" ? n : n + "", void 0, ce), Ce = (n, ...e) => {
   const t = n.length === 1 ? n[0] : e.reduce((i, a, o) => i + ((r) => {
     if (r._$cssResult$ === !0) return r.cssText;
     if (typeof r == "number") return r;
     throw Error("Value passed to 'css' function must be a 'css' function result: " + r + ". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.");
   })(a) + n[o + 1], n[0]);
-  return new Ce(t, n, ce);
+  return new De(t, n, ce);
 }, Ie = (n, e) => {
   if (_e) n.adoptedStyleSheets = e.map((t) => t instanceof CSSStyleSheet ? t : t.styleSheet);
   else for (const t of e) {
@@ -322,7 +322,7 @@ B.elementStyles = [], B.shadowRootOptions = { mode: "open" }, B[I("elementProper
  */
 const Z = globalThis, fe = (n) => n, X = Z.trustedTypes, we = X ? X.createPolicy("lit-html", { createHTML: (n) => n }) : void 0, Te = "$lit$", A = `lit$${Math.random().toFixed(9).slice(2)}$`, Me = "?" + A, Qe = `<${Me}>`, j = document, F = () => j.createComment(""), W = (n) => n === null || typeof n != "object" && typeof n != "function", ue = Array.isArray, Xe = (n) => ue(n) || typeof (n == null ? void 0 : n[Symbol.iterator]) == "function", ie = `[ 	
 \f\r]`, K = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, be = /-->/g, xe = />/g, T = RegExp(`>|${ie}(?:([^\\s"'>=/]+)(${ie}*=${ie}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), $e = /'/g, ke = /"/g, Pe = /^(?:script|style|textarea|title)$/i, et = (n) => (e, ...t) => ({ _$litType$: n, strings: e, values: t }), u = et(1), R = Symbol.for("lit-noChange"), f = Symbol.for("lit-nothing"), Ee = /* @__PURE__ */ new WeakMap(), M = j.createTreeWalker(j, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), $e = /'/g, ke = /"/g, Pe = /^(?:script|style|textarea|title)$/i, et = (n) => (e, ...t) => ({ _$litType$: n, strings: e, values: t }), h = et(1), R = Symbol.for("lit-noChange"), f = Symbol.for("lit-nothing"), Ee = /* @__PURE__ */ new WeakMap(), M = j.createTreeWalker(j, 129);
 function je(n, e) {
   if (!ue(n) || !n.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return we !== void 0 ? we.createHTML(e) : e;
@@ -332,8 +332,8 @@ const tt = (n, e) => {
   let a, o = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", r = K;
   for (let d = 0; d < t; d++) {
     const s = n[d];
-    let l, _, c = -1, h = 0;
-    for (; h < s.length && (r.lastIndex = h, _ = r.exec(s), _ !== null); ) h = r.lastIndex, r === K ? _[1] === "!--" ? r = be : _[1] !== void 0 ? r = xe : _[2] !== void 0 ? (Pe.test(_[2]) && (a = RegExp("</" + _[2], "g")), r = T) : _[3] !== void 0 && (r = T) : r === T ? _[0] === ">" ? (r = a ?? K, c = -1) : _[1] === void 0 ? c = -2 : (c = r.lastIndex - _[2].length, l = _[1], r = _[3] === void 0 ? T : _[3] === '"' ? ke : $e) : r === ke || r === $e ? r = T : r === be || r === xe ? r = K : (r = T, a = void 0);
+    let l, _, c = -1, u = 0;
+    for (; u < s.length && (r.lastIndex = u, _ = r.exec(s), _ !== null); ) u = r.lastIndex, r === K ? _[1] === "!--" ? r = be : _[1] !== void 0 ? r = xe : _[2] !== void 0 ? (Pe.test(_[2]) && (a = RegExp("</" + _[2], "g")), r = T) : _[3] !== void 0 && (r = T) : r === T ? _[0] === ">" ? (r = a ?? K, c = -1) : _[1] === void 0 ? c = -2 : (c = r.lastIndex - _[2].length, l = _[1], r = _[3] === void 0 ? T : _[3] === '"' ? ke : $e) : r === ke || r === $e ? r = T : r === be || r === xe ? r = K : (r = T, a = void 0);
     const m = r === T && n[d + 1].startsWith("/>") ? " " : "";
     o += r === K ? s + Qe : c >= 0 ? (i.push(l), s.slice(0, c) + Te + s.slice(c) + A + m) : s + A + (c === -2 ? d : m);
   }
@@ -352,15 +352,15 @@ class G {
     for (; (a = M.nextNode()) !== null && s.length < d; ) {
       if (a.nodeType === 1) {
         if (a.hasAttributes()) for (const c of a.getAttributeNames()) if (c.endsWith(Te)) {
-          const h = _[r++], m = a.getAttribute(c).split(A), g = /([.?@])?(.*)/.exec(h);
+          const u = _[r++], m = a.getAttribute(c).split(A), g = /([.?@])?(.*)/.exec(u);
           s.push({ type: 1, index: o, name: g[2], strings: m, ctor: g[1] === "." ? at : g[1] === "?" ? nt : g[1] === "@" ? ot : ee }), a.removeAttribute(c);
         } else c.startsWith(A) && (s.push({ type: 6, index: o }), a.removeAttribute(c));
         if (Pe.test(a.tagName)) {
-          const c = a.textContent.split(A), h = c.length - 1;
-          if (h > 0) {
+          const c = a.textContent.split(A), u = c.length - 1;
+          if (u > 0) {
             a.textContent = X ? X.emptyScript : "";
-            for (let m = 0; m < h; m++) a.append(c[m], F()), M.nextNode(), s.push({ type: 2, index: ++o });
-            a.append(c[h], F());
+            for (let m = 0; m < u; m++) a.append(c[m], F()), M.nextNode(), s.push({ type: 2, index: ++o });
+            a.append(c[u], F());
           }
         }
       } else if (a.nodeType === 8) if (a.data === Me) s.push({ type: 2, index: o });
@@ -646,7 +646,7 @@ function se(n, e, ...t) {
   let i = /* @__PURE__ */ new Date();
   n && ((d = n.start) != null && d.date || (s = n.start) != null && s.dateTime) && (i = new Date(n.start.date || n.start.dateTime));
   const a = Be(i), o = i.toLocaleDateString("de", { month: "short" }).toUpperCase().replace(".", ""), r = i.getDate();
-  return u`
+  return h`
         <div style="display: inline-flex; flex-direction: column; width: 36px; height: 38px; border-radius: 6px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-align: center; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; line-height: 1;">
             <div style="background-color: ${a}; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 0;">${o}</div>
             <div style="font-size: 16px; font-weight: bold; color: #333; padding-top: 2px; background-color: #fff;">${r}</div>
@@ -679,9 +679,9 @@ function ct(n) {
 }
 function ht(n, e, t, i, a) {
   if (!e)
-    return u`<div style="padding: 16px; text-align: center;">Lade Termine...</div>`;
+    return h`<div style="padding: 16px; text-align: center;">Lade Termine...</div>`;
   const o = vt(e);
-  return u`
+  return h`
         <div class="calendar-container">
             ${ut(n, t, i, a)}
             
@@ -696,7 +696,7 @@ function ht(n, e, t, i, a) {
 }
 function ut(n, e, t, i) {
   const a = t.toLocaleDateString(n.language || "de", { day: "2-digit", month: "2-digit" }), o = i.toLocaleDateString(n.language || "de", { day: "2-digit", month: "2-digit" });
-  return u`
+  return h`
         <div class="calendar-header">
             <button class="nav-btn" @click=${(r) => ze(r, -7)}>
                 <ha-icon icon="mdi:chevron-left"></ha-icon>
@@ -727,29 +727,33 @@ function ze(n, e) {
   );
 }
 function mt(n, e, t, i) {
-  const a = Be(e), o = e.toLocaleDateString(n.language || "de", { weekday: "short" }), r = e.toLocaleDateString(n.language || "de", { day: "2-digit", month: "2-digit" }), d = `${o}., ${r}.`, s = e.toLocaleDateString(n.language || "de", { month: "short" }).toUpperCase().replace(".", ""), l = e.getDate(), _ = (/* @__PURE__ */ new Date()).toDateString() === e.toDateString(), c = t.filter((h) => !h.is_empty);
-  return u`
-        <div class="day-bubble ${_ ? "today" : ""}" style="border-left: 4px solid ${a};">
-            <div class="day-header">
-                <div class="header-left">
-                    <div class="calendar-date-icon">
-                        <div class="month" style="background-color: ${a};">${s}</div>
-                        <div class="day">${l}</div>
-                    </div>
-                    <span class="day-title">${d}</span>
+  const a = Be(e), o = e.toLocaleDateString(n.language || "de", { weekday: "long" }), r = e.toLocaleDateString(n.language || "de", { month: "short" }).toUpperCase().replace(".", ""), d = e.getDate(), s = (/* @__PURE__ */ new Date()).toDateString() === e.toDateString(), l = t.filter((_) => !_.is_empty);
+  return h`
+        <div class="day-bubble ${s ? "today" : ""}" style="border-left: 4px solid ${a};">
+            <!-- Spalte 1: Kalenderblatt & ausgeschriebener Wochentag darunter -->
+            <div class="day-column-left">
+                <div class="calendar-date-icon">
+                    <div class="month" style="background-color: ${a};">${r}</div>
+                    <div class="day">${d}</div>
                 </div>
-                <button class="add-event-btn" @click=${(h) => gt(h, e, n, i)}>
-                    <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
-                </button>
+                <div class="weekday-name">${o}</div>
             </div>
-            
-            <div class="event-list">
-                ${c.length === 0 ? u`<div class="no-events">Keine Termine</div>` : c.map((h) => u`
-                        <div class="event-item" @click=${(m) => pt(m, h)}>
-                            <span class="event-time">${yt(h)}</span>
-                            <span class="event-title">${h.summary}</span>
+
+            <!-- Spalte 2: Termine (rechts neben dem Datum) -->
+            <div class="day-column-middle">
+                ${l.length === 0 ? h`<div class="no-events">Keine Termine</div>` : l.map((_) => h`
+                        <div class="event-item" @click=${(c) => pt(c, _)}>
+                            <span class="event-time">${yt(_)}</span>
+                            <span class="event-title">${_.summary}</span>
                         </div>
                     `)}
+            </div>
+
+            <!-- Spalte 3: Plus-Button ganz rechts -->
+            <div class="day-column-right">
+                <button class="add-event-btn" @click=${(_) => gt(_, e, n, i)}>
+                    <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
+                </button>
             </div>
         </div>
     `;
@@ -838,7 +842,7 @@ function wt(n, e, t, i, a, o) {
     var l;
     return !((l = e.exclude_entities) != null && l.includes(s));
   }), d = t.all_day || !1;
-  return u`
+  return h`
         <div class="add-event-form">
             <div class="field">
                 <label class="field-label">${n.localize("ui.components.calendar.event.summary") || "Title"}</label>
@@ -877,9 +881,9 @@ function wt(n, e, t, i, a, o) {
                     .value=${t.calendar_id || ""}
                     @change=${(s) => i({ calendar_id: s.target.value })}
                 >
-                    ${r.length === 0 ? u`<option value="">-- ${n.localize("ui.common.none") || "no calendars"} --</option>` : r.map((s) => {
+                    ${r.length === 0 ? h`<option value="">-- ${n.localize("ui.common.none") || "no calendars"} --</option>` : r.map((s) => {
     var l, _;
-    return u`
+    return h`
                             <option value=${s} ?selected=${s === t.calendar_id}>
                                 ${((_ = (l = n.states[s]) == null ? void 0 : l.attributes) == null ? void 0 : _.friendly_name) || s}
                             </option>
@@ -906,7 +910,7 @@ function wt(n, e, t, i, a, o) {
                         .value=${t.start_date || ""}
                         @change=${(s) => i({ start_date: s.target.value })}
                     />
-                    ${d ? "" : u`
+                    ${d ? "" : h`
                         <input
                             type="time"
                             class="field-input"
@@ -926,7 +930,7 @@ function wt(n, e, t, i, a, o) {
                         .value=${t.end_date || ""}
                         @change=${(s) => i({ end_date: s.target.value })}
                     />
-                    ${d ? "" : u`
+                    ${d ? "" : h`
                         <input
                             type="time"
                             class="field-input"
@@ -1731,7 +1735,7 @@ function le(n, e, t, i) {
     return e;
   return o;
 }
-var Oe = Object.defineProperty, bt = Object.getOwnPropertyDescriptor, xt = (n, e, t) => e in n ? Oe(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t, C = (n, e, t, i) => {
+var Oe = Object.defineProperty, bt = Object.getOwnPropertyDescriptor, xt = (n, e, t) => e in n ? Oe(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t, D = (n, e, t, i) => {
   for (var a = i > 1 ? void 0 : i ? bt(e, t) : e, o = n.length - 1, r; o >= 0; o--)
     (r = n[o]) && (a = (i ? r(e, t, a) : r(a)) || a);
   return i && a && Oe(e, t, a), a;
@@ -1823,7 +1827,7 @@ let k = class extends U {
   render() {
     var i;
     const e = this.mode === "add-event", t = e ? ((i = this.hass) == null ? void 0 : i.localize("ui.components.calendar.event.add")) || "Add Event" : this.detailTitle;
-    return u`
+    return h`
       <ha-adaptive-dialog
         .hass=${this.hass}
         .open=${this.open}
@@ -1856,7 +1860,7 @@ let k = class extends U {
         t.events[0].entity_id,
         this.config
       )}; border: none;`;
-      return u`
+      return h`
           <div
             class="calendar-item grouped detail"
             style="align-items: center; ${d}"
@@ -1867,22 +1871,22 @@ let k = class extends U {
         var N;
         const l = s.is_empty ? le(this.hass, "empty") : s.summary, _ = new Date(
           s.start.dateTime || s.start.date
-        ), c = new Date(s.end.dateTime || s.end.date), h = !s.start.dateTime, m = de(
+        ), c = new Date(s.end.dateTime || s.end.date), u = !s.start.dateTime, m = de(
           this.hass,
           _,
           c,
-          h
+          u
         ), g = ((N = this.hass.locale) == null ? void 0 : N.language) || this.hass.language || navigator.language, w = (p) => p.toLocaleTimeString(g, {
           hour: "2-digit",
           minute: "2-digit"
-        }), D = `${w(_)} - ${w(c)}`, b = this.config.show_date ?? !1, x = this.config.show_time ?? !1, E = this.hass.localize(
+        }), C = `${w(_)} - ${w(c)}`, b = this.config.show_date ?? !1, x = this.config.show_time ?? !1, E = this.hass.localize(
           "component.calendar.entity_component._.state_attributes.all_day.name"
         ) || "All day";
         let v = "";
         if (s.is_empty)
           v = "";
         else if (b || x)
-          if (h) {
+          if (u) {
             const p = b ? _.toLocaleDateString(g, {
               day: "2-digit",
               month: "2-digit",
@@ -1897,17 +1901,17 @@ let k = class extends U {
                 month: "2-digit",
                 year: "numeric"
               })
-            ), x && p.push(D), v = p.join(", ");
+            ), x && p.push(C), v = p.join(", ");
           }
         else
-          v = h ? E : w(_);
+          v = u ? E : w(_);
         if (!s.is_empty && this.config.show_duration && (v.endsWith(m) || (v += ` • ${m}`)), !s.is_empty && this.config.show_weekday) {
           const p = _.toLocaleDateString(g, {
             weekday: this.config.show_weekday_long ? "long" : "short"
           });
           v.includes(p) || (v += ` • ${p}`);
         }
-        return u`
+        return h`
                   <div
                     class="event-entry"
                     @click=${() => s.is_empty ? null : this._handleMoreInfo(s.entity_id)}
@@ -1918,13 +1922,13 @@ let k = class extends U {
                       class="event-time"
                       style="display: flex; align-items: center; gap: 4px;"
                     >
-                      ${!s.is_empty && (b || x) ? u`<ha-icon
+                      ${!s.is_empty && (b || x) ? h`<ha-icon
                             icon="mdi:clock-time-four-outline"
                             style="--mdc-icon-size: 14px;"
                           ></ha-icon>` : ""}
                       ${v}
                     </div>
-                    ${!s.is_empty && this.config.show_location && s.location ? u`
+                    ${!s.is_empty && this.config.show_location && s.location ? h`
                           <div class="event-location">
                             <ha-icon
                               icon="mdi:map-marker"
@@ -1933,7 +1937,7 @@ let k = class extends U {
                             ${s.location}
                           </div>
                         ` : ""}
-                    ${this.config.show_calendar_name && s.calendar_name ? u`
+                    ${this.config.show_calendar_name && s.calendar_name ? h`
                           <div class="event-calendar">
                             <ha-icon
                               icon="mdi:calendar-blank-multiple"
@@ -1947,7 +1951,7 @@ let k = class extends U {
       })}
             </div>
           </div>
-          ${this.config.show_divider ? u`<div class="calendar-divider"></div>` : ""}
+          ${this.config.show_divider ? h`<div class="calendar-divider"></div>` : ""}
         `;
     }) : this.config.group_by_date ? Ne(this.detailEvents).map((t) => {
       const i = t.date, a = oe(t.events[0].entity_id, this.config), o = se(
@@ -1959,7 +1963,7 @@ let k = class extends U {
         t.events[0].entity_id,
         this.config
       )}; border: none;`;
-      return u`
+      return h`
           <div
             class="calendar-item grouped detail"
             style="align-items: center; ${d}"
@@ -1970,22 +1974,22 @@ let k = class extends U {
         var N;
         const l = s.is_empty ? le(this.hass, "empty") : s.summary, _ = new Date(
           s.start.dateTime || s.start.date
-        ), c = new Date(s.end.dateTime || s.end.date), h = !s.start.dateTime, m = de(
+        ), c = new Date(s.end.dateTime || s.end.date), u = !s.start.dateTime, m = de(
           this.hass,
           _,
           c,
-          h
+          u
         ), g = ((N = this.hass.locale) == null ? void 0 : N.language) || this.hass.language || navigator.language, w = (p) => p.toLocaleTimeString(g, {
           hour: "2-digit",
           minute: "2-digit"
-        }), D = `${w(_)} - ${w(c)}`, b = this.config.show_date ?? !1, x = this.config.show_time ?? !1, E = this.hass.localize(
+        }), C = `${w(_)} - ${w(c)}`, b = this.config.show_date ?? !1, x = this.config.show_time ?? !1, E = this.hass.localize(
           "component.calendar.entity_component._.state_attributes.all_day.name"
         ) || "All day";
         let v = "";
         if (s.is_empty)
           v = "";
         else if (b || x)
-          if (h) {
+          if (u) {
             const p = b ? _.toLocaleDateString(g, {
               day: "2-digit",
               month: "2-digit",
@@ -2000,17 +2004,17 @@ let k = class extends U {
                 month: "2-digit",
                 year: "numeric"
               })
-            ), x && p.push(D), v = p.join(", ");
+            ), x && p.push(C), v = p.join(", ");
           }
         else
-          v = h ? E : w(_);
+          v = u ? E : w(_);
         if (!s.is_empty && this.config.show_duration && (v.endsWith(m) || (v += ` • ${m}`)), !s.is_empty && this.config.show_weekday) {
           const p = _.toLocaleDateString(g, {
             weekday: this.config.show_weekday_long ? "long" : "short"
           });
           v.includes(p) || (v += ` • ${p}`);
         }
-        return u`
+        return h`
                   <div
                     class="event-entry"
                     @click=${() => s.is_empty ? null : this._handleMoreInfo(s.entity_id)}
@@ -2021,13 +2025,13 @@ let k = class extends U {
                       class="event-time"
                       style="display: flex; align-items: center; gap: 4px;"
                     >
-                      ${!s.is_empty && (b || x) ? u`<ha-icon
+                      ${!s.is_empty && (b || x) ? h`<ha-icon
                             icon="mdi:clock-time-four-outline"
                             style="--mdc-icon-size: 14px;"
                           ></ha-icon>` : ""}
                       ${v}
                     </div>
-                    ${!s.is_empty && this.config.show_location && s.location ? u`
+                    ${!s.is_empty && this.config.show_location && s.location ? h`
                           <div class="event-location">
                             <ha-icon
                               icon="mdi:map-marker"
@@ -2036,7 +2040,7 @@ let k = class extends U {
                             ${s.location}
                           </div>
                         ` : ""}
-                    ${this.config.show_calendar_name && s.calendar_name ? u`
+                    ${this.config.show_calendar_name && s.calendar_name ? h`
                           <div class="event-calendar">
                             <ha-icon
                               icon="mdi:calendar-blank-multiple"
@@ -2050,7 +2054,7 @@ let k = class extends U {
       })}
             </div>
           </div>
-          ${this.config.show_divider ? u`<div class="calendar-divider"></div>` : ""}
+          ${this.config.show_divider ? h`<div class="calendar-divider"></div>` : ""}
         `;
     }) : this.detailEvents.map((e, t) => {
       var me;
@@ -2059,9 +2063,9 @@ let k = class extends U {
       try {
         o = new Date(e.start.dateTime || e.start.date), r = new Date(e.end.dateTime || e.end.date);
       } catch {
-        return u`<div class="error">Date Error</div>`;
+        return h`<div class="error">Date Error</div>`;
       }
-      const d = /* @__PURE__ */ new Date(), s = !e.start.dateTime, l = ((me = this.hass.locale) == null ? void 0 : me.language) || this.hass.language || navigator.language, _ = ($) => $.toLocaleTimeString(l, { hour: "2-digit", minute: "2-digit" }), c = de(this.hass, o, r, s), h = `${_(o)} - ${_(r)}`, m = this.config.show_date ?? !1, g = this.config.show_time ?? !1, w = this.hass.localize(
+      const d = /* @__PURE__ */ new Date(), s = !e.start.dateTime, l = ((me = this.hass.locale) == null ? void 0 : me.language) || this.hass.language || navigator.language, _ = ($) => $.toLocaleTimeString(l, { hour: "2-digit", minute: "2-digit" }), c = de(this.hass, o, r, s), u = `${_(o)} - ${_(r)}`, m = this.config.show_date ?? !1, g = this.config.show_time ?? !1, w = this.hass.localize(
         "component.calendar.entity_component._.state_attributes.all_day.name"
       ) || "All day";
       if (e.is_empty)
@@ -2082,7 +2086,7 @@ let k = class extends U {
               month: "2-digit",
               year: "numeric"
             })
-          ), g && $.push(h), a = $.join(", ");
+          ), g && $.push(u), a = $.join(", ");
         }
       else if (o > d) {
         const $ = o.getTime() - d.getTime(), Ue = Math.ceil($ / 6e4);
@@ -2101,8 +2105,8 @@ let k = class extends U {
         x,
         this.config.dark_mode ?? !1
       ), v = this.config.show_divider && t > 0, p = `background-color: ${re(e.entity_id, this.config)}; border: none;`;
-      return u`
-        ${v ? u`<div class="calendar-divider"></div>` : ""}
+      return h`
+        ${v ? h`<div class="calendar-divider"></div>` : ""}
         <div
           class="calendar-item detail"
           style="${p} ${e.is_empty ? "cursor: default; opacity: 0.7;" : ""}"
@@ -2112,16 +2116,16 @@ let k = class extends U {
           <div class="calendar-content">
             <div class="event-title">${i}</div>
             <div class="event-time">
-              ${!e.is_empty && (m || g) ? u`<ha-icon icon="mdi:clock-time-four-outline"></ha-icon>` : ""}
+              ${!e.is_empty && (m || g) ? h`<ha-icon icon="mdi:clock-time-four-outline"></ha-icon>` : ""}
               ${a}
             </div>
-            ${!e.is_empty && this.config.show_location && e.location ? u`
+            ${!e.is_empty && this.config.show_location && e.location ? h`
                   <div class="event-location">
                     <ha-icon icon="mdi:map-marker"></ha-icon>
                     ${e.location}
                   </div>
                 ` : ""}
-            ${this.config.show_calendar_name && e.calendar_name ? u`
+            ${this.config.show_calendar_name && e.calendar_name ? h`
                   <div class="event-calendar">
                     <ha-icon icon="mdi:calendar-blank-multiple"></ha-icon>
                     ${e.calendar_name}
@@ -2141,7 +2145,7 @@ let k = class extends U {
     this._opener ? this._opener.dispatchEvent(t) : window.dispatchEvent(t);
   }
 };
-$t(k, "styles", De`
+$t(k, "styles", Ce`
     :host {
       display: block;
     }
@@ -2334,28 +2338,28 @@ $t(k, "styles", De`
       align-self: center;
     }
   `);
-C([
+D([
   S({ attribute: !1 })
 ], k.prototype, "hass", 2);
-C([
+D([
   S({ attribute: !1 })
 ], k.prototype, "config", 2);
-C([
+D([
   S({ type: Boolean })
 ], k.prototype, "open", 2);
-C([
+D([
   S({ type: String })
 ], k.prototype, "mode", 2);
-C([
+D([
   S({ type: String })
 ], k.prototype, "detailTitle", 2);
-C([
+D([
   S({ type: Array })
 ], k.prototype, "detailEvents", 2);
-C([
+D([
   Y()
 ], k.prototype, "_addEventState", 2);
-k = C([
+k = D([
   Le("calendar-card-plus-popup")
 ], k);
 const kt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -2463,8 +2467,8 @@ let L = class extends U {
       return;
     }
     const a = await Ve(this.hass, e, t, i), o = (l) => {
-      const _ = l.getFullYear(), c = String(l.getMonth() + 1).padStart(2, "0"), h = String(l.getDate()).padStart(2, "0");
-      return `${_}-${c}-${h}`;
+      const _ = l.getFullYear(), c = String(l.getMonth() + 1).padStart(2, "0"), u = String(l.getDate()).padStart(2, "0");
+      return `${_}-${c}-${u}`;
     }, r = o(e), d = o(t), s = a.filter((l) => {
       let _ = "";
       return l.start.date ? _ = l.start.date : l.start.dateTime && (_ = o(new Date(l.start.dateTime))), _ >= r && _ <= d;
@@ -2473,8 +2477,8 @@ let L = class extends U {
   }
   _injectEmptyDays(e, t, i) {
     const a = [...e], o = /* @__PURE__ */ new Set(), r = (l) => {
-      const _ = l.getFullYear(), c = String(l.getMonth() + 1).padStart(2, "0"), h = String(l.getDate()).padStart(2, "0");
-      return `${_}-${c}-${h}`;
+      const _ = l.getFullYear(), c = String(l.getMonth() + 1).padStart(2, "0"), u = String(l.getDate()).padStart(2, "0");
+      return `${_}-${c}-${u}`;
     };
     e.forEach((l) => {
       l.start.date ? o.add(l.start.date) : l.start.dateTime && o.add(r(new Date(l.start.dateTime)));
@@ -2494,9 +2498,9 @@ let L = class extends U {
       }), d.setDate(d.getDate() + 1);
     }
     return a.sort((l, _) => {
-      const c = (h) => {
-        if (h.start.dateTime) return new Date(h.start.dateTime).getTime();
-        const [m, g, w] = h.start.date.split("-").map(Number);
+      const c = (u) => {
+        if (u.start.dateTime) return new Date(u.start.dateTime).getTime();
+        const [m, g, w] = u.start.date.split("-").map(Number);
         return new Date(m, g - 1, w, 0, 0, 0).getTime();
       };
       return c(l) - c(_);
@@ -2520,16 +2524,16 @@ let L = class extends U {
   }
   render() {
     if (!this.config || !this.hass)
-      return u``;
+      return h``;
     const e = this._customStart || /* @__PURE__ */ new Date(), t = this._customEnd || new Date(e.getTime() + 7 * 864e5), i = ht(this.hass, this._events, this.config, e, t);
-    return u`
+    return h`
             <ha-card>
                 ${i}
             </ha-card>
         `;
   }
   static get styles() {
-    return De`
+    return Ce`
             :host {
                 display: block;
             }
@@ -2578,116 +2582,115 @@ let L = class extends U {
                 gap: 16px;
             }
             .day-bubble {
-                border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
-                border-radius: var(--ha-card-border-radius, 12px);
-                background-color: var(--card-background-color, #1c1c1e);
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-            .day-bubble.today {
-                border-color: var(--primary-color, #03a9f4);
-            }
-            .day-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.05));
-                background: rgba(0,0,0,0.05);
-            }
-            .header-left {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-            }
-            
-            /* --- Rotes Kalender Icon --- */
-            .calendar-date-icon {
-                display: flex;
-                flex-direction: column;
-                width: 38px;
-                height: 40px;
-                border-radius: 6px;
-                background-color: #fff;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                overflow: hidden;
-                text-align: center;
-                border: 1px solid rgba(0,0,0,0.1);
-                flex-shrink: 0;
-            }
-            .calendar-date-icon .month {
-                background-color: #f44336;
-                color: white;
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                padding: 2px 0;
-                line-height: 1.1;
-            }
-            .calendar-date-icon .day {
-                font-size: 18px;
-                font-weight: bold;
-                color: #333;
-                background-color: #fff;
-                line-height: 24px;
-            }
-
-            .day-title {
-                font-weight: 600;
-                font-size: 1.05em;
-                color: var(--primary-text-color);
-            }
-            .add-event-btn {
-                background: none;
-                border: none;
-                color: var(--secondary-text-color);
-                cursor: pointer;
-                padding: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: background-color 0.2s, color 0.2s;
-            }
-            .add-event-btn:hover {
-                color: var(--primary-color);
-                background-color: rgba(120, 120, 120, 0.1);
-            }
-            .add-event-btn ha-icon {
-                --mdc-icon-size: 24px;
-            }
-
-            /* --- Events (Textliste) --- */
-            .event-list {
-                padding: 12px 16px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .event-item {
-                display: flex;
-                align-items: flex-start;
-                gap: 16px;
-                cursor: pointer;
-            }
-            .event-time {
-                font-size: 0.9em;
-                color: var(--secondary-text-color);
-                min-width: 65px;
-                white-space: nowrap;
-                padding-top: 1px;
-            }
-            .event-title {
-                font-size: 0.95em;
-                color: var(--primary-text-color);
-                word-break: break-word;
-            }
-            .no-events {
-                font-size: 0.9em;
-                color: var(--secondary-text-color);
-                font-style: italic;
-            }
+			display: grid;
+			grid-template-columns: 100px 1fr 40px;
+			align-items: center;
+			gap: 12px;
+			border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
+			border-radius: var(--ha-card-border-radius, 12px);
+			background-color: var(--card-background-color, #1c1c1e);
+			padding: 12px 16px;
+			margin-bottom: 8px;
+			}
+			.day-bubble.today {
+				border-color: var(--primary-color, #03a9f4);
+			}
+			.day-column-left {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 6px;
+				border-right: 1px solid var(--divider-color, rgba(255,255,255,0.1));
+				padding-right: 12px;
+			}
+			.calendar-date-icon {
+				display: flex;
+				flex-direction: column;
+				width: 38px;
+				height: 40px;
+				border-radius: 6px;
+				background-color: #fff;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+				overflow: hidden;
+				text-align: center;
+				border: 1px solid rgba(0,0,0,0.1);
+				flex-shrink: 0;
+			}
+			.calendar-date-icon .month {
+				color: white;
+				font-size: 10px;
+				font-weight: 700;
+				text-transform: uppercase;
+				padding: 2px 0;
+				line-height: 1.1;
+			}
+			.calendar-date-icon .day {
+				font-size: 18px;
+				font-weight: bold;
+				color: #333;
+				background-color: #fff;
+				line-height: 24px;
+			}
+			.weekday-name {
+				font-size: 0.75em;
+				color: var(--secondary-text-color);
+				font-weight: 500;
+				text-align: center;
+				white-space: nowrap;
+			}
+			.day-column-middle {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				min-width: 0;
+			}
+			.day-column-right {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			.add-event-btn {
+				background: none;
+				border: none;
+				color: var(--secondary-text-color);
+				cursor: pointer;
+				padding: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 50%;
+				transition: background-color 0.2s, color 0.2s;
+			}
+			.add-event-btn:hover {
+				color: var(--primary-color);
+				background-color: rgba(120, 120, 120, 0.1);
+			}
+			.add-event-btn ha-icon {
+				--mdc-icon-size: 24px;
+			}
+			.event-item {
+				display: flex;
+				align-items: flex-start;
+				gap: 12px;
+				cursor: pointer;
+			}
+			.event-time {
+				font-size: 0.85em;
+				color: var(--secondary-text-color);
+				min-width: 60px;
+				white-space: nowrap;
+			}
+			.event-title {
+				font-size: 0.9em;
+				color: var(--primary-text-color);
+				word-break: break-word;
+			}
+			.no-events {
+				font-size: 0.85em;
+				color: var(--secondary-text-color);
+				font-style: italic;
+			}
         `;
   }
   getCardSize() {
