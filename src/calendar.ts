@@ -4,6 +4,53 @@ import { CalendarCardPlusConfig, CalendarEvent } from './types';
 
 let currentOffsetDays = 0;
 
+export interface EventGroup {
+    date: Date;
+    events: CalendarEvent[];
+    calendar_name?: string;
+}
+
+// Hilfsfunktionen für popup-dialog.ts mit flexibler Parameter-Anzahl
+export function _resolveColor(_item?: any, _config?: any, ..._rest: any[]): string {
+    return 'var(--primary-color, #03a9f4)';
+}
+
+export function _renderDynamicIcon(_item?: any, _config?: any, ..._rest: any[]): TemplateResult {
+    return html`<ha-icon icon="mdi:calendar"></ha-icon>`;
+}
+
+export function _resolveBackgroundColor(_item?: any, _config?: any, ..._rest: any[]): string {
+    return 'var(--card-background-color, #1c1c1e)';
+}
+
+export function _formatDuration(..._args: any[]): string {
+    return '';
+}
+
+export function _formatLocalizedDuration(..._args: any[]): string {
+    return '';
+}
+
+export function _groupEventsByDate(events: CalendarEvent[]): EventGroup[] {
+    const grouped: Record<string, EventGroup> = {};
+    (events || []).forEach((ev: CalendarEvent) => {
+        const dateStr = ev.start.date || ev.start.dateTime;
+        if (!dateStr) return;
+        const d = new Date(dateStr);
+        const key = d.toDateString();
+        if (!grouped[key]) {
+            grouped[key] = { date: d, events: [] };
+        }
+        grouped[key].events.push(ev);
+    });
+    return Object.values(grouped);
+}
+
+export function _groupEventsByDateAndCalendar(events: CalendarEvent[]): EventGroup[] {
+    return _groupEventsByDate(events);
+}
+
+// Haupt-Renderfunktion der Karte
 export function renderCalendar(
     hass: HomeAssistant,
     events: CalendarEvent[] | undefined,
