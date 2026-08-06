@@ -18,12 +18,14 @@ export class CalendarCardPlus extends LitElement {
         super.connectedCallback();
         this.addEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
         this.addEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
+        this.addEventListener('calendar-card-add-event', this._handleAddEvent as unknown as EventListener);
     }
 
     public disconnectedCallback() {
         super.disconnectedCallback();
         this.removeEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
         this.removeEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
+        this.removeEventListener('calendar-card-add-event', this._handleAddEvent as unknown as EventListener);
     }
 
     private _handleRangeChanged = (e: CustomEvent) => {
@@ -52,7 +54,6 @@ export class CalendarCardPlus extends LitElement {
     private async _fetchEvents() {
         if (!this.hass || !this.config) return;
 
-        // Standard: Heute bis Heute + 7 Tage (verhindert das Laden von 23 alten Tagen)
         let start = this._customStart;
         if (!start) {
             start = new Date();
@@ -88,11 +89,20 @@ export class CalendarCardPlus extends LitElement {
     private _injectEmptyDays(events: CalendarEvent[], start: Date, end: Date): CalendarEvent[] {
         const result: CalendarEvent[] = [...events];
         const dayMap = new Set<string>();
+        
+        // Lokale Umwandlung ohne UTC-Zeitverschiebung (verhindert falschen Tag)
+        const toLocalKey = (d: Date) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+
         events.forEach(e => {
-            const dStr = e.start.date || e.start.dateTime;
-            if (dStr) {
-                const d = new Date(dStr);
-                dayMap.add(d.toISOString().split('T')[0]);
+            if (e.start.date) {
+                dayMap.add(e.start.date);
+            } else if (e.start.dateTime) {
+                dayMap.add(toLocalKey(new Date(e.start.dateTime)));
             }
         });
 
@@ -102,7 +112,7 @@ export class CalendarCardPlus extends LitElement {
         last.setHours(0, 0, 0, 0);
 
         while (current <= last) {
-            const key = current.toISOString().split('T')[0];
+            const key = toLocalKey(current);
             if (!dayMap.has(key)) {
                 result.push({
                     start: { date: key },
@@ -116,10 +126,13 @@ export class CalendarCardPlus extends LitElement {
             current.setDate(current.getDate() + 1);
         }
 
-        return result.sort((a: CalendarEvent, b: CalendarEvent) => {
-            const dateA = new Date(a.start.dateTime || a.start.date!).getTime();
-            const dateB = new Date(b.start.dateTime || b.start.date!).getTime();
-            return dateA - dateB;
+        return result.sort((a, b) => {
+            const getVal = (ev: CalendarEvent) => {
+                if (ev.start.dateTime) return new Date(ev.start.dateTime).getTime();
+                const [y, m, d] = ev.start.date!.split('-').map(Number);
+                return new Date(y, m - 1, d, 0, 0, 0).getTime();
+            };
+            return getVal(a) - getVal(b);
         });
     }
 
@@ -132,6 +145,20 @@ export class CalendarCardPlus extends LitElement {
             title: e.detail.title,
             events: e.detail.entities
         });
+    }
+
+    private _handleAddEvent = (e: CustomEvent) => {
+        // Öffnet das standard Home Assistant Pop-up ohne Import-Blocker
+        this.dispatchEvent(
+            new CustomEvent('show-dialog', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    dialogTag: 'ha-dialog-calendar-event-editor',
+                    dialogParams: e.detail
+                }
+            })
+        );
     }
 
     private _showPopup(dialogTag: string, dialogParams: any): void {
@@ -162,9 +189,8 @@ export class CalendarCardPlus extends LitElement {
             return html``;
         }
 
-        // Berechne Start/Ende für den Header
         const displayStart = this._customStart || new Date();
-        const displayEnd = this._customEnd || new Date(displayStart.getTime() + 6 * 86400000);
+        const displayEnd = this._customEnd || new Date(displayStart.getTime() + 7 * 86400000);
 
         const content = renderCalendar(this.hass, this._events, this.config, displayStart, displayEnd);
 
@@ -187,24 +213,24 @@ export class CalendarCardPlus extends LitElement {
                 flex-direction: column;
                 padding: 16px;
             }
+            
+            /* --- Header --- */
             .calendar-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 margin-bottom: 16px;
-                padding-bottom: 8px;
-                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.1));
             }
             .calendar-header-title {
-                font-size: 1.2em;
+                text-align: center;
+                font-size: 1.1em;
                 font-weight: 500;
                 color: var(--primary-text-color);
             }
             .calendar-header-week {
-                font-size: 0.9em;
+                font-size: 0.85em;
                 color: var(--secondary-text-color);
-                margin-top: 4px;
-                text-align: center;
+                margin-top: 2px;
             }
             .nav-btn {
                 background: none;
@@ -212,68 +238,35 @@ export class CalendarCardPlus extends LitElement {
                 color: var(--primary-text-color);
                 cursor: pointer;
                 padding: 4px;
-                border-radius: 50%;
-                transition: background-color 0.2s;
-            }
-            .nav-btn:hover {
-                background-color: var(--secondary-background-color);
-            }
-            
-            .day-container {
                 display: flex;
-                gap: 16px;
-                padding: 12px 0;
-                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.05));
             }
-            .day-container:last-child {
-                border-bottom: none;
+            .nav-btn ha-icon {
+                --mdc-icon-size: 24px;
             }
-            
-            .calendar-date-icon {
+
+            /* --- Tage (Bubbles) --- */
+            .calendar-days-list {
                 display: flex;
                 flex-direction: column;
-                width: 44px;
-                height: 48px;
-                border-radius: 8px;
-                background-color: var(--card-background-color, #fff);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-                overflow: hidden;
-                text-align: center;
-                flex-shrink: 0;
-                border: 1px solid var(--divider-color, rgba(255,255,255,0.1));
+                gap: 12px;
             }
-            .calendar-date-icon .month {
-                background-color: #f44336;
-                color: white;
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                padding: 2px 0;
-                line-height: 1.2;
-            }
-            .calendar-date-icon .day {
-                font-size: 20px;
-                font-weight: bold;
-                color: var(--primary-text-color);
-                line-height: 28px;
-                background-color: var(--card-background-color);
-            }
-            
-            .day-content {
-                flex: 1;
+            .day-bubble {
+                border: 1px solid;
+                border-radius: var(--ha-card-border-radius, 12px);
+                padding: 12px 16px;
+                background-color: var(--card-background-color, #1c1c1e);
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
             }
-            .day-header-info {
+            .day-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 6px;
+                margin-bottom: 8px;
             }
             .day-title {
-                font-size: 16px;
-                font-weight: 600;
+                font-weight: bold;
+                font-size: 1.05em;
                 color: var(--primary-text-color);
             }
             .add-event-btn {
@@ -281,50 +274,43 @@ export class CalendarCardPlus extends LitElement {
                 border: none;
                 color: var(--secondary-text-color);
                 cursor: pointer;
-                padding: 4px;
+                padding: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border-radius: 50%;
             }
             .add-event-btn:hover {
                 color: var(--primary-color);
-                background-color: var(--secondary-background-color);
             }
-            
-            .event-bubble {
-                background-color: var(--secondary-background-color, rgba(120, 120, 120, 0.1));
-                border-radius: 6px;
-                padding: 8px 12px;
+            .add-event-btn ha-icon {
+                --mdc-icon-size: 24px;
+            }
+
+            /* --- Events (Textliste) --- */
+            .event-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
                 margin-bottom: 6px;
                 cursor: pointer;
-                transition: background-color 0.2s, transform 0.1s;
-                border-left: 4px solid var(--primary-color);
-                display: flex;
-                flex-direction: column;
             }
-            .event-bubble:hover {
-                background-color: var(--divider-color, rgba(120, 120, 120, 0.2));
-            }
-            .event-bubble:last-child {
+            .event-item:last-child {
                 margin-bottom: 0;
             }
             .event-time {
-                font-size: 12px;
+                font-size: 0.9em;
                 color: var(--secondary-text-color);
-                margin-bottom: 2px;
-                font-weight: 500;
+                min-width: 65px;
+                white-space: nowrap;
             }
             .event-title {
-                font-size: 15px;
-                font-weight: 500;
+                font-size: 0.9em;
                 color: var(--primary-text-color);
+                word-break: break-word;
             }
-            .no-events-text {
-                font-size: 14px;
+            .no-events {
+                font-size: 0.9em;
                 color: var(--secondary-text-color);
-                font-style: italic;
-                padding: 4px 0;
             }
         `;
     }

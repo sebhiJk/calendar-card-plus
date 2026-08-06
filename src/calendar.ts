@@ -18,9 +18,21 @@ export function _resolveColor(item: any, _config?: any, ..._rest: any[]): string
     return 'var(--primary-color, #03a9f4)';
 }
 
+// Baut das kleine rot/weiße Kalender-Icon exakt wie auf deinem Screenshot
 export function _renderDynamicIcon(item: any, _config?: any, ..._rest: any[]): TemplateResult {
-    const icon = (item && item.icon) ? item.icon : 'mdi:calendar';
-    return html`<ha-icon .icon=${icon}></ha-icon>`;
+    let d = new Date();
+    if (item && (item.start?.date || item.start?.dateTime)) {
+        d = new Date(item.start.date || item.start.dateTime);
+    }
+    const monthStr = d.toLocaleDateString('de', { month: 'short' }).toUpperCase().replace('.', '');
+    const dayNum = d.getDate();
+
+    return html`
+        <div style="display: inline-flex; flex-direction: column; width: 36px; height: 38px; border-radius: 6px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-align: center; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; line-height: 1;">
+            <div style="background-color: #f44336; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 0;">${monthStr}</div>
+            <div style="font-size: 16px; font-weight: bold; color: #333; padding-top: 2px;">${dayNum}</div>
+        </div>
+    `;
 }
 
 export function _resolveBackgroundColor(_item?: any, _config?: any, ..._rest: any[]): string {
@@ -83,8 +95,9 @@ export function renderCalendar(
             ${_renderHeader(hass, config, displayStart, displayEnd)}
             
             <div class="calendar-days-list">
-                ${Object.keys(groupedByDay).map(dayStr => {
-                    const dayDate = new Date(dayStr);
+                ${Object.keys(groupedByDay).sort().map(dayStr => {
+                    const [y, m, d] = dayStr.split('-').map(Number);
+                    const dayDate = new Date(y, m - 1, d);
                     const dayEvents = groupedByDay[dayStr];
                     return _renderDayRow(hass, dayDate, dayEvents, config);
                 })}
@@ -104,17 +117,17 @@ function _renderHeader(
 
     return html`
         <div class="calendar-header">
-            <button class="nav-btn" @click=${(e: Event) => _navigate(e, -7)} title="Vorherige Woche">
-                <ha-icon icon="mdi:chevron-left" style="--mdc-icon-size: 28px;"></ha-icon>
+            <button class="nav-btn" @click=${(e: Event) => _navigate(e, -7)}>
+                <ha-icon icon="mdi:chevron-left"></ha-icon>
             </button>
 
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div class="calendar-header-title">${config.title || 'Kalender'}</div>
+            <div class="calendar-header-title">
+                ${config.title || 'Kalender'}
                 <div class="calendar-header-week">${startStr} - ${endStr}</div>
             </div>
 
-            <button class="nav-btn" @click=${(e: Event) => _navigate(e, 7)} title="Nächste Woche">
-                <ha-icon icon="mdi:chevron-right" style="--mdc-icon-size: 28px;"></ha-icon>
+            <button class="nav-btn" @click=${(e: Event) => _navigate(e, 7)}>
+                <ha-icon icon="mdi:chevron-right"></ha-icon>
             </button>
         </div>
     `;
@@ -147,45 +160,33 @@ function _renderDayRow(
     events: CalendarEvent[], 
     config: CalendarCardPlusConfig
 ): TemplateResult {
-    const monthStr = dayDate.toLocaleDateString(hass.language || 'de', { month: 'short' }).toUpperCase();
-    const dayNum = dayDate.getDate();
-    
-    const weekdayStr = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'long' });
+    const weekday = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'short' });
+    const dayMonth = dayDate.toLocaleDateString(hass.language || 'de', { day: '2-digit', month: '2-digit' });
+    const dayTitle = `${weekday}., ${dayMonth}`;
+
+    const isToday = new Date().toDateString() === dayDate.toDateString();
+    const borderColor = isToday ? 'var(--primary-color, #03a9f4)' : 'var(--divider-color, rgba(255,255,255,0.12))';
+
     const realEvents = events.filter(ev => !ev.is_empty);
 
     return html`
-        <div class="day-container">
-            <!-- Kalender Icon (Monat/Tag) -->
-            <div class="calendar-date-icon">
-                <div class="month">${monthStr}</div>
-                <div class="day">${dayNum}</div>
+        <div class="day-bubble" style="border-color: ${borderColor};">
+            <div class="day-header">
+                <span class="day-title">${dayTitle}</span>
+                <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, config)}>
+                    <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
+                </button>
             </div>
-
-            <!-- Tagesinhalt -->
-            <div class="day-content">
-                <div class="day-header-info">
-                    <span class="day-title">${weekdayStr}</span>
-                    <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, config)}>
-                        <ha-icon icon="mdi:plus-circle-outline" style="--mdc-icon-size: 24px;"></ha-icon>
-                    </button>
-                </div>
-
-                ${realEvents.length === 0 
-                    ? html`<div class="no-events-text">Keine Termine</div>` 
-                    : realEvents.map(ev => _renderEventBubble(ev, config))
-                }
-            </div>
-        </div>
-    `;
-}
-
-function _renderEventBubble(ev: CalendarEvent, config: CalendarCardPlusConfig): TemplateResult {
-    const color = _resolveColor(ev, config);
-    
-    return html`
-        <div class="event-bubble" style="border-left-color: ${color};" @click=${(e: Event) => _handleEventClick(e, ev)}>
-            <div class="event-time">${_formatEventTime(ev)}</div>
-            <div class="event-title">${ev.summary}</div>
+            
+            ${realEvents.length === 0 
+                ? html`<div class="no-events">Keine Termine</div>`
+                : realEvents.map(ev => html`
+                    <div class="event-item" @click=${(e: Event) => _handleEventClick(e, ev)}>
+                        <span class="event-time">${_formatEventTime(ev)}</span>
+                        <span class="event-title">${ev.summary}</span>
+                    </div>
+                `)
+            }
         </div>
     `;
 }
@@ -208,12 +209,8 @@ function _handleEventClick(e: Event, ev: CalendarEvent) {
 function _handleAddEventForDay(e: Event, dayDate: Date, config?: CalendarCardPlusConfig) {
     e.stopPropagation();
 
-    // Standardmäßig auf 08:00 Uhr am angewählten Tag setzen
     const startDate = new Date(dayDate);
     startDate.setHours(8, 0, 0, 0);
-
-    const endDate = new Date(dayDate);
-    endDate.setHours(9, 0, 0, 0);
 
     let entityId = config?.entity;
     if (!entityId && config?.entities && Array.isArray(config.entities) && config.entities.length > 0) {
@@ -221,33 +218,36 @@ function _handleAddEventForDay(e: Event, dayDate: Date, config?: CalendarCardPlu
     }
 
     const target = e.currentTarget as HTMLElement;
-
-    // Öffnet den nativen HA Event Editor
     target.dispatchEvent(
-        new CustomEvent('show-dialog', {
+        new CustomEvent('calendar-card-add-event', {
             bubbles: true,
             composed: true,
             detail: {
-                dialogTag: 'ha-dialog-calendar-event-editor',
-                dialogImport: () => Promise.resolve(), 
-                dialogParams: {
-                    selectedDate: startDate,
-                    startDate: startDate,
-                    endDate: endDate,
-                    calendarId: entityId,
-                    entityId: entityId,
-                },
-            },
+                calendarId: entityId,
+                selectedDate: startDate,
+            }
         })
     );
 }
 
 function _groupEventsByDay(events: CalendarEvent[]): Record<string, CalendarEvent[]> {
     const grouped: Record<string, CalendarEvent[]> = {};
+    const toLocalKey = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
     events.forEach(ev => {
-        const dateStr = ev.start.date || ev.start.dateTime;
-        if (!dateStr) return;
-        const key = new Date(dateStr).toDateString();
+        let key = "";
+        if (ev.start.date) {
+            key = ev.start.date;
+        } else if (ev.start.dateTime) {
+            key = toLocalKey(new Date(ev.start.dateTime));
+        }
+        if (!key) return;
+
         if (!grouped[key]) {
             grouped[key] = [];
         }
@@ -260,13 +260,9 @@ function _formatEventTime(ev: CalendarEvent): string {
     if (ev.start.date) return 'Ganztägig';
     if (ev.start.dateTime) {
         const start = new Date(ev.start.dateTime);
-        const end = ev.end.dateTime ? new Date(ev.end.dateTime) : null;
-        
         const startStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (end) {
-            const endStr = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return `${startStr} - ${endStr}`;
-        }
+        
+        // Kein End-Zeitraum anzeigen um wie auf den Bildern nur z.B. "23:30" oder "17:00" auszugeben.
         return startStr;
     }
     return '';
