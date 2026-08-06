@@ -35,23 +35,36 @@ export class CalendarCardPlus extends LitElement {
     @state() private _detailPopupTitle = '';
     @state() private _detailPopupEvents: CalendarEvent[] = [];
 
-    public connectedCallback() {
-        super.connectedCallback();
-        this.addEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
-        this.addEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
-        this.addEventListener('calendar-card-add-event', this._handleAddEvent as unknown as EventListener);
-    }
-
-    public disconnectedCallback() {
-        this.removeEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
-        this.removeEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
-        this.removeEventListener('calendar-card-add-event', this._handleAddEvent as unknown as EventListener);
-        super.disconnectedCallback();
-    }
-
     private _handleRangeChanged = (e: CustomEvent) => {
         this._customStart = e.detail.start;
         this._customEnd = e.detail.end;
+        this._fetchEvents();
+    };
+
+    private _handleShowDetail = (e: CustomEvent) => {
+        e.stopPropagation();
+        this._detailPopupTitle = e.detail.title || 'Termine';
+        this._detailPopupEvents = e.detail.entities || [];
+        this._showDetailPopup = true;
+    };
+
+    private _handleAddEvent = (e: CustomEvent) => {
+        e.stopPropagation();
+        const targetCalendar = e.detail.calendarId;
+        const selectedDate = e.detail.selectedDate;
+
+        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
+        if (popup && typeof popup.showAddDialog === 'function') {
+            popup.showAddDialog({
+                calendarId: targetCalendar,
+                selectedDate: selectedDate
+            });
+        }
+    };
+
+    private _onEventSaved = () => {
+        this._events = undefined;
+        this.requestUpdate();
         this._fetchEvents();
     };
 
@@ -175,34 +188,6 @@ export class CalendarCardPlus extends LitElement {
         });
     }
 
-    // --- Korrigierter Event Handler für das Detail-Popup ---
-    private _handleShowDetail = (e: CustomEvent) => {
-        e.stopPropagation();
-        this._detailPopupTitle = e.detail.title || 'Termine';
-        this._detailPopupEvents = e.detail.entities || [];
-        this._showDetailPopup = true;
-    };
-
-    private _handleAddEvent = (e: CustomEvent) => {
-        e.stopPropagation();
-        const targetCalendar = e.detail.calendarId;
-        const selectedDate = e.detail.selectedDate;
-
-        const popup = this.shadowRoot?.querySelector('calendar-card-popup-dialog') as any;
-        if (popup && typeof popup.showAddDialog === 'function') {
-            popup.showAddDialog({
-                calendarId: targetCalendar,
-                selectedDate: selectedDate
-            });
-        }
-    };
-
-    private _onEventSaved = () => {
-        this._events = undefined;
-        this.requestUpdate();
-        this._fetchEvents();
-    };
-
     protected render(): TemplateResult {
         if (!this.config || !this.hass) {
             return html``;
@@ -214,7 +199,11 @@ export class CalendarCardPlus extends LitElement {
         const content = renderCalendar(this.hass, this._events, this.config, displayStart, displayEnd);
 
         return html`
-            <ha-card>
+            <ha-card
+                @calendar-card-show-detail=${this._handleShowDetail}
+                @calendar-card-range-changed=${this._handleRangeChanged}
+                @calendar-card-add-event=${this._handleAddEvent}
+            >
                 ${content}
 
                 <!-- Direktes Rendern des Popups innerhalb der Karte, wenn ausgelöst -->
@@ -245,7 +234,7 @@ export class CalendarCardPlus extends LitElement {
                 display: flex;
                 flex-direction: column;
                 padding: 16px;
-                position: relative; /* Wichtig falls absolute Elemente im Popup greifen */
+                position: relative;
             }
             
             /* --- Header --- */
