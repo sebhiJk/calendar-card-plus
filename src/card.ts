@@ -52,27 +52,18 @@ export class CalendarCardPlus extends LitElement {
     private async _fetchEvents() {
         if (!this.hass || !this.config) return;
 
+        // Standard: Heute bis Heute + 7 Tage (verhindert das Laden von 23 alten Tagen)
         let start = this._customStart;
         if (!start) {
             start = new Date();
-            start.setDate(start.getDate() - 30);
             start.setHours(0, 0, 0, 0);
         }
 
         let end = this._customEnd;
         if (!end) {
-            const now = new Date();
-            let minutes = 43200; // Standard: 30 Tage in die Zukunft
-            if (this.config.upcoming_events) {
-                if (this.config.days !== undefined || this.config.hours !== undefined || this.config.minutes !== undefined) {
-                    minutes = (this.config.days || 0) * 1440 + 
-                              (this.config.hours || 0) * 60 + 
-                              (this.config.minutes || 0);
-                } else if (this.config.max_minutes_until_start !== undefined) {
-                     minutes = this.config.max_minutes_until_start;
-                }
-            }
-            end = new Date(now.getTime() + minutes * 60000);
+            end = new Date(start);
+            end.setDate(end.getDate() + 7);
+            end.setHours(23, 59, 59, 999);
         }
 
         const calendars = Object.keys(this.hass.states)
@@ -116,7 +107,7 @@ export class CalendarCardPlus extends LitElement {
                 result.push({
                     start: { date: key },
                     end: { date: key },
-                    summary: 'empty',
+                    summary: 'Keine Termine',
                     is_empty: true,
                     entity_id: 'empty',
                     calendar_name: ''
@@ -143,20 +134,6 @@ export class CalendarCardPlus extends LitElement {
         });
     }
 
-    protected render(): TemplateResult {
-        if (!this.config || !this.hass) {
-            return html``;
-        }
-
-        const content = renderCalendar(this.hass, this._events, this.config);
-
-        return html`
-            <ha-card>
-                ${content}
-            </ha-card>
-        `;
-    }
-
     private _showPopup(dialogTag: string, dialogParams: any): void {
         this.dispatchEvent(
             new CustomEvent('show-dialog', {
@@ -180,6 +157,24 @@ export class CalendarCardPlus extends LitElement {
         this._fetchEvents();
     };
 
+    protected render(): TemplateResult {
+        if (!this.config || !this.hass) {
+            return html``;
+        }
+
+        // Berechne Start/Ende für den Header
+        const displayStart = this._customStart || new Date();
+        const displayEnd = this._customEnd || new Date(displayStart.getTime() + 6 * 86400000);
+
+        const content = renderCalendar(this.hass, this._events, this.config, displayStart, displayEnd);
+
+        return html`
+            <ha-card>
+                ${content}
+            </ha-card>
+        `;
+    }
+
     static get styles(): CSSResultGroup {
         return css`
             :host {
@@ -190,116 +185,152 @@ export class CalendarCardPlus extends LitElement {
                 box-sizing: border-box;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                padding: 16px;
             }
-            
-            .calendar-container {
+            .calendar-header {
                 display: flex;
-                flex-direction: column;
-                justify-content: center;
-                height: 100%;
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .calendar-item {
-                display: flex;
+                justify-content: space-between;
                 align-items: center;
-                gap: 12px;
-                padding: 12px;
-                border-radius: var(--ha-card-border-radius, 12px);
-                cursor: pointer;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                margin-bottom: 16px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.1));
             }
-            .calendar-item:last-child {
-                margin-bottom: 0px;
-            }
-            .calendar-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background-color: var(--primary-color, #03a9f4);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                flex-shrink: 0;
-            }
-            .calendar-icon ha-icon {
-                --mdc-icon-size: 20px;
-            }
-            .calendar-content {
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-                flex: 1;
-            }
-            .event-title {
-                font-size: 14px;
+            .calendar-header-title {
+                font-size: 1.2em;
                 font-weight: 500;
                 color: var(--primary-text-color);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
-            .event-time {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                font-size: 12px;
-                color: var(--secondary-text-color);
-            }
-            .event-time ha-icon {
-                --mdc-icon-size: 14px;
-                color: var(--secondary-text-color);
-            }
-            .event-location, .event-calendar {
-                display: flex;
-                align-items: center;
-                gap: 4px;
+            .calendar-header-week {
                 font-size: 0.9em;
                 color: var(--secondary-text-color);
-                margin-top: 1px;
-            }
-            .event-location ha-icon, .event-calendar ha-icon {
-                --mdc-icon-size: 14px;
-                color: var(--secondary-text-color);
-            }
-            .progress-bar {
                 margin-top: 4px;
-                height: 4px;
-                background-color: var(--secondary-background-color, #444);
-                border-radius: 2px;
+                text-align: center;
+            }
+            .nav-btn {
+                background: none;
+                border: none;
+                color: var(--primary-text-color);
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 50%;
+                transition: background-color 0.2s;
+            }
+            .nav-btn:hover {
+                background-color: var(--secondary-background-color);
+            }
+            
+            .day-container {
+                display: flex;
+                gap: 16px;
+                padding: 12px 0;
+                border-bottom: 1px solid var(--divider-color, rgba(255,255,255,0.05));
+            }
+            .day-container:last-child {
+                border-bottom: none;
+            }
+            
+            .calendar-date-icon {
+                display: flex;
+                flex-direction: column;
+                width: 44px;
+                height: 48px;
+                border-radius: 8px;
+                background-color: var(--card-background-color, #fff);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
                 overflow: hidden;
-                width: 100%;
+                text-align: center;
+                flex-shrink: 0;
+                border: 1px solid var(--divider-color, rgba(255,255,255,0.1));
             }
-            .progress-fill {
-                height: 100%;
-                background-color: var(--primary-text-color, #fff);
-                border-radius: 2px;
-                opacity: 0.7;
+            .calendar-date-icon .month {
+                background-color: #f44336;
+                color: white;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                padding: 2px 0;
+                line-height: 1.2;
             }
-            .calendar-divider {
-                border-top: 1px solid var(--divider-color, #e0e0e0);
-                margin: 4px 12px;
+            .calendar-date-icon .day {
+                font-size: 20px;
+                font-weight: bold;
+                color: var(--primary-text-color);
+                line-height: 28px;
+                background-color: var(--card-background-color);
             }
-
-            .calendar-item.grouped .calendar-content {
+            
+            .day-content {
+                flex: 1;
                 display: flex;
                 flex-direction: column;
-                gap: 2px;
+                justify-content: center;
             }
-            .calendar-item.grouped .event-entry {
+            .day-header-info {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+            }
+            .day-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: var(--primary-text-color);
+            }
+            .add-event-btn {
+                background: none;
+                border: none;
+                color: var(--secondary-text-color);
+                cursor: pointer;
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+            }
+            .add-event-btn:hover {
+                color: var(--primary-color);
+                background-color: var(--secondary-background-color);
+            }
+            
+            .event-bubble {
+                background-color: var(--secondary-background-color, rgba(120, 120, 120, 0.1));
+                border-radius: 6px;
+                padding: 8px 12px;
+                margin-bottom: 6px;
+                cursor: pointer;
+                transition: background-color 0.2s, transform 0.1s;
+                border-left: 4px solid var(--primary-color);
                 display: flex;
                 flex-direction: column;
             }
-            .calendar-item.grouped .calendar-icon {
-                align-self: center;
+            .event-bubble:hover {
+                background-color: var(--divider-color, rgba(120, 120, 120, 0.2));
+            }
+            .event-bubble:last-child {
+                margin-bottom: 0;
+            }
+            .event-time {
+                font-size: 12px;
+                color: var(--secondary-text-color);
+                margin-bottom: 2px;
+                font-weight: 500;
+            }
+            .event-title {
+                font-size: 15px;
+                font-weight: 500;
+                color: var(--primary-text-color);
+            }
+            .no-events-text {
+                font-size: 14px;
+                color: var(--secondary-text-color);
+                font-style: italic;
+                padding: 4px 0;
             }
         `;
     }
 
     public getCardSize(): number {
-        return 1;
+        return 4;
     }
 
     public static async getConfigElement() {
@@ -311,7 +342,7 @@ export class CalendarCardPlus extends LitElement {
          return {
             type: 'custom:calendar-card-plus',
             exclude_entities: [],
-            unfold_events: false
+            show_empty_days: true
          };
     }
 }
