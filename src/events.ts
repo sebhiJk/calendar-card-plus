@@ -16,7 +16,11 @@ export interface AddEventPopupState {
     recurrence?: string;
 }
 
-export function openAddEventPopup(hass: HomeAssistant, config: CalendarCardPlusConfig): AddEventPopupState {
+export function openAddEventPopup(
+    hass: HomeAssistant, 
+    config: CalendarCardPlusConfig, 
+    targetDate?: string | Date
+): AddEventPopupState {
     const calendars = Object.keys(hass.states)
         .filter(eid => eid.startsWith('calendar.'))
         .filter(eid => !config.exclude_entities?.includes(eid));
@@ -24,8 +28,20 @@ export function openAddEventPopup(hass: HomeAssistant, config: CalendarCardPlusC
     const defaultCalendar = calendars.length > 0 ? calendars[0] : undefined;
 
     const now = new Date();
-    const start = new Date(now);
-    start.setHours(start.getHours() + 1, 0, 0, 0);
+    let start = new Date(now);
+
+    if (targetDate) {
+        if (typeof targetDate === 'string') {
+            const parts = targetDate.split('-');
+            start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            start.setHours(now.getHours(), now.getMinutes(), 0, 0);
+        } else {
+            start = new Date(targetDate);
+        }
+    } else {
+        start.setHours(start.getHours() + 1, 0, 0, 0);
+    }
+
     const end = new Date(start);
     end.setHours(end.getHours() + 1, 0, 0, 0);
 

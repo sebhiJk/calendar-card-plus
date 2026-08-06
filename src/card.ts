@@ -6,6 +6,22 @@ import { CalendarCardPlusConfig, CalendarEvent } from './types';
 import { renderCalendar } from './calendar';
 import './popup-dialog';
 
+export const DEFAULT_DAY_COLORS = [
+  "#2196F3", // Montag (Blau)
+  "#8BC34A", // Dienstag (Grün)
+  "#E91E63", // Mittwoch (Pink)
+  "#FF9800", // Donnerstag (Orange)
+  "#00BCD4", // Freitag (Türkis)
+  "#9C27B0", // Samstag (Violett)
+  "#F44336"  // Sonntag (Rot)
+];
+
+export function getDayColor(date: Date): string {
+  const day = date.getDay(); // 0 = Sonntag, 1 = Montag, etc.
+  const index = day === 0 ? 6 : day - 1;
+  return DEFAULT_DAY_COLORS[index];
+}
+
 @customElement('calendar-card-plus')
 export class CalendarCardPlus extends LitElement {
     @property({ attribute: false }) public hass!: HomeAssistant;
@@ -167,7 +183,6 @@ export class CalendarCardPlus extends LitElement {
     }
 
     private _handleAddEvent = (e: CustomEvent) => {
-        // Fallback für fehlende Calendar ID eingebaut, damit das HA Dialog-Fenster nicht crasht
         let targetCalendar = e.detail.calendarId;
         if (!targetCalendar) {
             const calendars = Object.keys(this.hass.states).filter(eid => eid.startsWith('calendar.'));
