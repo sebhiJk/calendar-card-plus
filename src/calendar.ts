@@ -227,7 +227,7 @@ export function _toCssColor(color: string): string {
   return `var(--${color}-color)`;
 }
 
-function _handleCompactClick(
+export function _handleCompactClick(
   e: Event,
   hass: HomeAssistant,
   events: CalendarEvent[],
