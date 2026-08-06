@@ -1,6 +1,7 @@
 import { html, TemplateResult } from 'lit';
 import { HomeAssistant } from './ha/types';
 import { CalendarCardPlusConfig, CalendarEvent } from './types';
+import { getDayColor } from './card';
 
 let currentOffsetDays = 0;
 
@@ -23,12 +24,13 @@ export function _renderDynamicIcon(item: any, _config?: any, ..._rest: any[]): T
     if (item && (item.start?.date || item.start?.dateTime)) {
         d = new Date(item.start.date || item.start.dateTime);
     }
+    const dayColor = getDayColor(d);
     const monthStr = d.toLocaleDateString('de', { month: 'short' }).toUpperCase().replace('.', '');
     const dayNum = d.getDate();
 
     return html`
         <div style="display: inline-flex; flex-direction: column; width: 36px; height: 38px; border-radius: 6px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-align: center; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; line-height: 1;">
-            <div style="background-color: #f44336; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 0;">${monthStr}</div>
+            <div style="background-color: ${dayColor}; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 0;">${monthStr}</div>
             <div style="font-size: 16px; font-weight: bold; color: #333; padding-top: 2px; background-color: #fff;">${dayNum}</div>
         </div>
     `;
@@ -159,6 +161,7 @@ function _renderDayRow(
     events: CalendarEvent[], 
     config: CalendarCardPlusConfig
 ): TemplateResult {
+    const dayColor = getDayColor(dayDate);
     const weekday = dayDate.toLocaleDateString(hass.language || 'de', { weekday: 'short' });
     const dayMonth = dayDate.toLocaleDateString(hass.language || 'de', { day: '2-digit', month: '2-digit' });
     const dayTitle = `${weekday}., ${dayMonth}.`;
@@ -170,16 +173,16 @@ function _renderDayRow(
     const realEvents = events.filter((ev: CalendarEvent) => !ev.is_empty);
 
     return html`
-        <div class="day-bubble ${isToday ? 'today' : ''}">
+        <div class="day-bubble ${isToday ? 'today' : ''}" style="border-left: 4px solid ${dayColor};">
             <div class="day-header">
                 <div class="header-left">
                     <div class="calendar-date-icon">
-                        <div class="month">${monthStr}</div>
+                        <div class="month" style="background-color: ${dayColor};">${monthStr}</div>
                         <div class="day">${dayNum}</div>
                     </div>
                     <span class="day-title">${dayTitle}</span>
                 </div>
-                <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, config)}>
+                <button class="add-event-btn" @click=${(e: Event) => _handleAddEventForDay(e, dayDate, hass, config)}>
                     <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
                 </button>
             </div>
@@ -214,7 +217,7 @@ function _handleEventClick(e: Event, ev: CalendarEvent) {
     );
 }
 
-function _handleAddEventForDay(e: Event, dayDate: Date, config?: CalendarCardPlusConfig) {
+function _handleAddEventForDay(e: Event, dayDate: Date, hass: HomeAssistant, config?: CalendarCardPlusConfig) {
     e.stopPropagation();
 
     const startDate = new Date(dayDate);
@@ -223,6 +226,10 @@ function _handleAddEventForDay(e: Event, dayDate: Date, config?: CalendarCardPlu
     let entityId = config?.entity;
     if (!entityId && config?.entities && Array.isArray(config.entities) && config.entities.length > 0) {
         entityId = typeof config.entities[0] === 'string' ? config.entities[0] : config.entities[0].entity;
+    }
+    if (!entityId) {
+        const calendars = Object.keys(hass.states || {}).filter(eid => eid.startsWith('calendar.'));
+        entityId = calendars.length > 0 ? calendars[0] : '';
     }
 
     const target = e.currentTarget as HTMLElement;
