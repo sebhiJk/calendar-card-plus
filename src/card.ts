@@ -1,33 +1,36 @@
-const mdiPlus = "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z";
 import { fetchCalendarEvents } from './ha/data/calendar';
 import { LitElement, html, css, TemplateResult, CSSResultGroup } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant } from './ha/types';
-import { CalendarCardPlusConfig } from './types';
+import { CalendarCardPlusConfig, CalendarEvent } from './types';
 import { renderCalendar } from './calendar';
-
-
-
-import { openAddEventPopup } from './events';
 import './popup-dialog';
-
-import { CalendarEvent } from './types';
 
 @customElement('calendar-card-plus')
 export class CalendarCardPlus extends LitElement {
     @property({ attribute: false }) public hass!: HomeAssistant;
     @state() private config!: CalendarCardPlusConfig;
     @state() private _events: CalendarEvent[] | undefined = undefined;
+    @state() private _customStart?: Date;
+    @state() private _customEnd?: Date;
 
     public connectedCallback() {
         super.connectedCallback();
         this.addEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
+        this.addEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
     }
 
     public disconnectedCallback() {
         super.disconnectedCallback();
         this.removeEventListener('calendar-card-show-detail', this._handleShowDetail as unknown as EventListener);
+        this.removeEventListener('calendar-card-range-changed', this._handleRangeChanged as unknown as EventListener);
     }
+
+    private _handleRangeChanged = (e: CustomEvent) => {
+        this._customStart = e.detail.start;
+        this._customEnd = e.detail.end;
+        this._fetchEvents();
+    };
 
     protected willUpdate(changedProps: Map<string, any>) {
         super.willUpdate(changedProps);
@@ -49,22 +52,27 @@ export class CalendarCardPlus extends LitElement {
     private async _fetchEvents() {
         if (!this.hass || !this.config) return;
 
-        const now = new Date();
-        let end: Date;
+        let start = this._customStart;
+        if (!start) {
+            start = new Date();
+            start.setDate(start.getDate() - 30);
+            start.setHours(0, 0, 0, 0);
+        }
 
-        if (this.config.upcoming_events) {
-            let minutes = 1440; 
-            if (this.config.days !== undefined || this.config.hours !== undefined || this.config.minutes !== undefined) {
-                minutes = (this.config.days || 0) * 1440 + 
-                          (this.config.hours || 0) * 60 + 
-                          (this.config.minutes || 0);
-            } else if (this.config.max_minutes_until_start !== undefined) {
-                 minutes = this.config.max_minutes_until_start;
+        let end = this._customEnd;
+        if (!end) {
+            const now = new Date();
+            let minutes = 43200; // Standard: 30 Tage in die Zukunft
+            if (this.config.upcoming_events) {
+                if (this.config.days !== undefined || this.config.hours !== undefined || this.config.minutes !== undefined) {
+                    minutes = (this.config.days || 0) * 1440 + 
+                              (this.config.hours || 0) * 60 + 
+                              (this.config.minutes || 0);
+                } else if (this.config.max_minutes_until_start !== undefined) {
+                     minutes = this.config.max_minutes_until_start;
+                }
             }
             end = new Date(now.getTime() + minutes * 60000);
-        } else {
-            end = new Date(now);
-            end.setHours(23, 59, 59, 999);
         }
 
         const calendars = Object.keys(this.hass.states)
@@ -76,10 +84,10 @@ export class CalendarCardPlus extends LitElement {
             return;
         }
 
-        const allEvents = await fetchCalendarEvents(this.hass, now, end, calendars);
+        const allEvents = await fetchCalendarEvents(this.hass, start, end, calendars);
 
         if (this.config.show_empty_days) {
-            this._events = this._injectEmptyDays(allEvents, now, end);
+            this._events = this._injectEmptyDays(allEvents, start, end);
         } else {
             this._events = allEvents;
         }
@@ -141,27 +149,12 @@ export class CalendarCardPlus extends LitElement {
         }
 
         const content = renderCalendar(this.hass, this._events, this.config);
-        
 
         return html`
             <ha-card>
-                <div class="add-event-btn" @click=${this._openAddEventPopup} style=${this.config.show_add_event ? '' : 'display: none;'}>
-                    <ha-icon-button .path=${mdiPlus}></ha-icon-button>
-                </div>
                 ${content}
             </ha-card>
         `;
-    }
-
-    private _openAddEventPopup = async () => {
-        const addEventState = openAddEventPopup(this.hass, this.config);
-        this._showPopup('calendar-card-plus-popup', {
-            hass: this.hass,
-            config: this.config,
-            opener: this,
-            mode: 'add-event',
-            addEventState
-        });
     }
 
     private _showPopup(dialogTag: string, dialogParams: any): void {
@@ -290,16 +283,6 @@ export class CalendarCardPlus extends LitElement {
                 margin: 4px 12px;
             }
 
-            .add-event-btn {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                z-index: 2;
-                color: var(--secondary-text-color);
-            }
-            .add-event-btn:hover {
-                color: var(--primary-text-color);
-            }
             .calendar-item.grouped .calendar-content {
                 display: flex;
                 flex-direction: column;
